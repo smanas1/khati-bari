@@ -12,7 +12,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { tenantSlug } = await params;
   const tenant = await getOrInitTenant(tenantSlug);
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://khatibari.smanas.net";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://khatibari.vercel.app";
   const canonicalUrl =
     tenantSlug === "khatibari" || tenantSlug === "khati-bari" || tenantSlug === "khati-shombhar"
       ? baseUrl
@@ -48,7 +48,7 @@ export async function generateMetadata({
       tenant.name,
       "khatibari",
       "khati bari",
-      "khatibari.smanas.net",
+      "khatibari.vercel.app",
     ],
     authors: [{ name: tenant.name, url: canonicalUrl }],
     creator: tenant.name,

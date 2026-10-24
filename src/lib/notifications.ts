@@ -31,7 +31,7 @@ export function formatOrderMessage(order: OrderNotificationData): string {
     )
     .join("\n\n");
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://khatibari.smanas.net";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://khatibari.vercel.app";
 
   return `🔔 *নতুন অর্ডার এসেছে!* (#${order.orderNumber})
 ━━━━━━━━━━━━━━━━━━

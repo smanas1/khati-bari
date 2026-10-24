@@ -1558,7 +1558,7 @@ ${lines}
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "OnlineStore",
-              "@id": "https://khatibari.smanas.net/#store",
+              "@id": "https://khatibari.vercel.app/#store",
               name: tenant.name || "খাঁটি বাড়ি",
               alternateName: [
                 "Khati Bari",
@@ -1567,9 +1567,9 @@ ${lines}
                 "khatibari",
                 "খাঁটি বাড়ি অনলাইন শপ",
               ],
-              url: "https://khatibari.smanas.net",
-              logo: "https://khatibari.smanas.net/products/honey.jpg",
-              image: "https://khatibari.smanas.net/products/honey.jpg",
+              url: "https://khatibari.vercel.app",
+              logo: "https://khatibari.vercel.app/logo.png",
+              image: "https://khatibari.vercel.app/logo.png",
               description:
                 tenant.tagline ||
                 "খাঁটি প্রাকৃতিক মধু, রাজশাহীর মিষ্টি আম ও খাঁটি খেজুরের গুড়ের বিশ্বস্ত অনলাইন শপ।",
@@ -1623,8 +1623,8 @@ ${lines}
                   image: p.image
                     ? p.image.startsWith("http")
                       ? p.image
-                      : `https://khatibari.smanas.net${p.image}`
-                    : "https://khatibari.smanas.net/products/honey.jpg",
+                      : `https://khatibari.vercel.app${p.image}`
+                    : "https://khatibari.vercel.app/products/honey.jpg",
                   description:
                     p.description ||
                     `${p.name} — খাঁটি, প্রাকৃতিক ও রাসায়নিকমুক্ত নির্ভেজাল দেশীয় উপাদান।`,
@@ -1635,7 +1635,7 @@ ${lines}
                   },
                   offers: {
                     "@type": "Offer",
-                    url: "https://khatibari.smanas.net",
+                    url: "https://khatibari.vercel.app",
                     priceCurrency: "BDT",
                     price: p.price,
                     availability:
@@ -1670,7 +1670,7 @@ ${lines}
               mainEntity: [
                 {
                   "@type": "Question",
-                  name: "খাঁটি মধু (Pure Honey) কীভাবে চিনবেন এবং কেন খাঁটি বাড়ি (khatibari.smanas.net)-এর মধু সেরা?",
+                  name: "খাঁটি মধু (Pure Honey) কীভাবে চিনবেন এবং কেন খাঁটি বাড়ি (khatibari.vercel.app)-এর মধু সেরা?",
                   acceptedAnswer: {
                     "@type": "Answer",
                     text: "খাঁটি মধু পানিতে দিলে সহজে দ্রবীভূত না হয়ে নিচে গিয়ে জমাট বাঁধে। খাঁটি বাড়ি কোনো কৃত্রিম বা চাষের মধু দেয় না, বরং প্রাকৃতিকভাবে মৌমাছিদের তৈরি গ্রাম-বাংলার আসল বুনো মৌচাক থেকে সরাসরি কাঁচা, অপরিশোধিত ও চিনি ছাড়া প্রাকৃতিক চাকের মধু ক্যাশ অন ডেলিভারিতে সরবরাহ করে।",
@@ -1694,10 +1694,10 @@ ${lines}
                 },
                 {
                   "@type": "Question",
-                  name: "khatibari.smanas.net থেকে কীভাবে ক্যাশ অন ডেলিভারিতে অর্ডার করবেন?",
+                  name: "khatibari.vercel.app থেকে কীভাবে ক্যাশ অন ডেলিভারিতে অর্ডার করবেন?",
                   acceptedAnswer: {
                     "@type": "Answer",
-                    text: "khatibari.smanas.net ওয়েবসাইটে গিয়ে পণ্য কার্টে যোগ করুন। চেকআউট ফর্মে আপনার নাম, মোবাইল নম্বর এবং সম্পূর্ণ ঠিকানা লিখে 'অর্ডার কনফার্ম করুন' বাটনে ক্লিক করুন। এছাড়া সরাসরি WhatsApp-এও অর্ডার করতে পারেন। পণ্য হাতে পেয়ে চেক করে টাকা দেওয়ার সুযোগ রয়েছে।",
+                    text: "khatibari.vercel.app ওয়েবসাইটে গিয়ে পণ্য কার্টে যোগ করুন। চেকআউট ফর্মে আপনার নাম, মোবাইল নম্বর এবং সম্পূর্ণ ঠিকানা লিখে 'অর্ডার কনফার্ম করুন' বাটনে ক্লিক করুন। এছাড়া সরাসরি WhatsApp-এও অর্ডার করতে পারেন। পণ্য হাতে পেয়ে চেক করে টাকা দেওয়ার সুযোগ রয়েছে।",
                   },
                 },
               ],

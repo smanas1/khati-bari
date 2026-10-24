@@ -6,7 +6,7 @@ import StorefrontClient from "./[tenantSlug]/StorefrontClient";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://khatibari.smanas.net";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://khatibari.vercel.app";
   const title = "খাঁটি বাড়ি — প্রাকৃতিক মধু, রাজশাহীর আম ও খাঁটি গুড়ের বিশ্বস্ত প্রতিষ্ঠান";
   const description =
     "গ্রাম-বাংলার প্রাকৃতিক মৌচাক থেকে সংগৃহীত খাঁটি চাকের মধু, রাজশাহীর মিষ্টি আম ও খাঁটি খেজুরের গুড় কিনুন সরাসরি মৌয়াল ও বাগান থেকে। সারাদেশে ক্যাশ অন ডেলিভারি।";
@@ -37,7 +37,7 @@ export async function generateMetadata(): Promise<Metadata> {
       "খাঁটি বাড়ি",
       "khati bari",
       "khatibari",
-      "khatibari.smanas.net",
+      "khatibari.vercel.app",
     ],
     authors: [{ name: "খাঁটি বাড়ি (Khati Bari)", url: baseUrl }],
     creator: "খাঁটি বাড়ি",
