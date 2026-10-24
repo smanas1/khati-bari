@@ -43,12 +43,12 @@ export async function getOrInitTenant(rawSlug: string = "khatibari") {
       data: {
         slug,
         name: (slug === "khatibari" || slug === "khati-bari" || slug === "khati-shombhar") ? "খাঁটি বাড়ি" : slug.toUpperCase(),
-        tagline: "১০০% প্রাকৃতিক ও খাঁটি উপাদানের বিশ্বস্ত প্রতিষ্ঠান",
+        tagline: "প্রাকৃতিক ও নির্ভেজাল খাদ্যের বিশ্বস্ত প্রতিষ্ঠান",
         whatsapp: "8801700000000",
         products: {
           create: [
             {
-              name: "১০০% খাঁটি প্রাকৃতিক মধু",
+              name: "সুন্দরবনের খাঁটি খলিশা ফুলের মধু",
               category: "মধু",
               unit: "৫০০ মিলি",
               price: 650,
@@ -60,10 +60,10 @@ export async function getOrInitTenant(rawSlug: string = "khatibari") {
                 { unit: "১ লিটার", price: 1250 },
                 { unit: "২ লিটার", price: 2400 },
               ]),
-              description: "গ্রাম-বাংলার প্রাকৃতিক মৌচাক ও সুন্দরবন থেকে সংগৃহীত ১০০% খাঁটি কাঁচা মধু। কোনো প্রকার চিনি, প্রিজারভেটিভ বা ভেজাল নেই।",
+              description: "গ্রাম-বাংলার প্রাকৃতিক মৌচাক ও সুন্দরবন থেকে সংগৃহীত খাঁটি কাঁচা মধু। কোনো প্রকার চিনি, প্রিজারভেটিভ বা ভেজাল নেই।",
             },
             {
-              name: "রাজশাহীর বাছাইকৃত মিষ্টি আম",
+              name: "রাজশাহীর বাছাইকৃত হিমসাগর আম",
               category: "আম",
               unit: "৫ কেজি",
               price: 450,
@@ -79,7 +79,7 @@ export async function getOrInitTenant(rawSlug: string = "khatibari") {
               description: "সম্পূর্ণ প্রাকৃতিকভাবে গাছপাকা, মিষ্টি ও সুস্বাদু সেরা জাতের আম।",
             },
             {
-              name: "১০০% খাঁটি খেজুরের গুড়",
+              name: "খেজুরের খাঁটি পাটালি গুড় (নলেন)",
               category: "গুড়",
               unit: "পাটালি (৫০০ গ্রাম)",
               price: 220,
@@ -286,7 +286,7 @@ export async function sendTestNotificationAction(): Promise<{ success: boolean; 
     notes: "এটি সিস্টেম কনফিগারেশন চেক করার জন্য একটি টেস্ট নোটিফিকেশন।",
     items: [
       {
-        productName: "১০০% খাঁটি প্রাকৃতিক মধু",
+        productName: "সুন্দরবনের খাঁটি খলিশা ফুলের মধু",
         unit: "১ লিটার",
         quantity: 1,
         unitPrice: 1250,

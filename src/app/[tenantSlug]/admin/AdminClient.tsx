@@ -600,7 +600,7 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
                     <input
                       name="tagline"
                       defaultValue={tenant.tagline || ""}
-                      placeholder="যেমন: ১০০% খাঁটি ও নির্ভেজাল"
+                      placeholder="যেমন: প্রাকৃতিক ও নির্ভেজাল"
                       className="w-full border border-stone-200 rounded-xl px-3.5 py-2 bg-stone-50 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
                     />
                   </div>

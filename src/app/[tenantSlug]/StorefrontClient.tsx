@@ -657,7 +657,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
             <div className="flex items-center gap-1.5 truncate">
               <Sparkles className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
               <span className="text-[11px] font-bold text-amber-300 truncate">
-                ১০০% খাঁটি ও নির্ভেজাল খাদ্যোপাদান
+                প্রাকৃতিক ও নির্ভেজাল খাদ্যোপাদান
               </span>
             </div>
             <a
@@ -676,7 +676,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
             <div className="flex items-center gap-2">
               <span className="bg-amber-400 text-emerald-950 font-black px-2.5 py-0.5 rounded-full text-[11px] shadow-sm flex items-center gap-1">
                 <Sparkles className="w-3 h-3 text-emerald-950" />
-                ১০০% খাঁটি ও নির্ভেজাল
+                প্রাকৃতিক ও নির্ভেজাল
               </span>
               <span className="text-emerald-100 font-medium">
                 সরাসরি মৌয়াল ও রাজশাহীর নিজস্ব বাগান থেকে সংগৃহীত প্রাকৃতিক খাদ্যোপাদান
@@ -711,12 +711,18 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
             <div className="min-w-0">
               <h1 className="text-base sm:text-2xl font-black text-emerald-950 tracking-tight flex items-center gap-1.5 truncate">
                 <span>{tenant.name}</span>
-                <span className="hidden sm:inline-block text-[10px] font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
-                  খাঁটি বাড়ি
-                </span>
+                {tenant.slug !== "khatibari" && tenant.name !== "খাঁটি বাড়ি" ? (
+                  <span className="hidden sm:inline-block text-[10px] font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
+                    খাঁটি বাড়ি
+                  </span>
+                ) : (
+                  <span className="hidden sm:inline-block text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/80">
+                    অফিসিয়াল
+                  </span>
+                )}
               </h1>
               <p className="text-[11px] sm:text-xs text-stone-500 font-medium truncate">
-                {tenant.tagline || "১০০% প্রাকৃতিক ও খাঁটি উপাদানের বিশ্বস্ত প্রতিষ্ঠান"}
+                {tenant.tagline || "প্রাকৃতিক ও নির্ভেজাল খাদ্যের বিশ্বস্ত প্রতিষ্ঠান"}
               </p>
             </div>
           </div>
@@ -791,7 +797,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
             <div className="lg:col-span-7 flex flex-col justify-center">
               <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-amber-500 text-emerald-950 text-xs font-black px-4 py-1.5 rounded-full mb-4 shadow-md w-fit">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-950" />
-                <span>১০০% প্রাকৃতিক ও দেশীয় উপাদানের নিশ্চয়তা</span>
+                <span>প্রাকৃতিক ও দেশীয় উপাদানের খাঁটি নিশ্চয়তা</span>
               </div>
 
               <h2 className="text-2xl sm:text-4xl lg:text-[42px] font-black leading-[1.25] tracking-tight text-white">
@@ -799,7 +805,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
               </h2>
 
               <p className="text-emerald-100/90 text-sm sm:text-base mt-4 leading-relaxed max-w-xl font-normal">
-                গ্রাম-বাংলার প্রাকৃতিক মৌচাক, বিশ্বস্ত মৌয়াল ও রাজশাহীর নিজস্ব বাগান থেকে সংগৃহীত ১০০% নির্ভেজাল খাদ্যোপাদান। কোনো প্রকার কেমিক্যাল বা প্রিজারভেটিভ ছাড়া খাঁটি স্বাদের সর্বোচ্চ নিশ্চয়তা।
+                গ্রাম-বাংলার প্রাকৃতিক মৌচাক, বিশ্বস্ত মৌয়াল ও রাজশাহীর নিজস্ব বাগান থেকে সংগৃহীত সম্পূর্ণ নির্ভেজাল খাদ্যোপাদান। কোনো প্রকার কেমিক্যাল বা প্রিজারভেটিভ ছাড়া খাঁটি স্বাদের সর্বোচ্চ নিশ্চয়তা।
               </p>
 
               {/* Action CTAs */}
@@ -909,7 +915,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                     <span>৪.৯ / ৫.০</span>
                     <span className="text-stone-300 font-normal text-[10px] sm:text-[11px]">(সন্তুষ্ট ক্রেতা)</span>
                   </div>
-                  <p className="text-[9px] sm:text-[10px] text-emerald-200 font-medium">১০০% প্রাকৃতিক গুণমান</p>
+                  <p className="text-[9px] sm:text-[10px] text-emerald-200 font-medium">প্রাকৃতিক ও সেরা গুণমান</p>
                 </div>
               </div>
             </div>
@@ -1131,7 +1137,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                           isExpanded ? "" : "line-clamp-2"
                         }`}
                       >
-                        {p.description || "১০০% নির্ভেজাল ও স্বাস্থ্যসম্মত খাঁটি দেশীয় পণ্য।"}
+                        {p.description || "সম্পূর্ণ নির্ভেজাল ও স্বাস্থ্যসম্মত খাঁটি দেশীয় পণ্য।"}
                       </p>
                       {p.description && p.description.length > 70 && (
                         <button
@@ -1376,7 +1382,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
               image: "https://khatibari.smanas.net/products/honey.jpg",
               description:
                 tenant.tagline ||
-                "১০০% খাঁটি প্রাকৃতিক মধু, রাজশাহীর মিষ্টি আম ও খাঁটি খেজুরের গুড়ের বিশ্বস্ত অনলাইন শপ।",
+                "খাঁটি প্রাকৃতিক মধু, রাজশাহীর মিষ্টি আম ও খাঁটি খেজুরের গুড়ের বিশ্বস্ত অনলাইন শপ।",
               telephone: tenant.whatsapp || "+8801700000000",
               priceRange: "৳৳",
               currenciesAccepted: "BDT",
@@ -1392,7 +1398,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                 name: "Bangladesh",
               },
               knowsAbout: [
-                "১০০% খাঁটি প্রাকৃতিক মধু (Pure Natural Honey)",
+                "খাঁটি প্রাকৃতিক মধু (Pure Natural Honey)",
                 "গ্রাম-বাংলার প্রাকৃতিক মৌচাক",
                 "সুন্দরবনের মধু",
                 "সরিষা ফুলের মধু",
@@ -1430,7 +1436,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                     : "https://khatibari.smanas.net/products/honey.jpg",
                   description:
                     p.description ||
-                    `${p.name} — ১০০% খাঁটি, প্রাকৃতিক ও রাসায়নিকমুক্ত নির্ভেজাল দেশীয় উপাদান।`,
+                    `${p.name} — খাঁটি, প্রাকৃতিক ও রাসায়নিকমুক্ত নির্ভেজাল দেশীয় উপাদান।`,
                   sku: `KB-${p.id}`,
                   brand: {
                     "@type": "Brand",
@@ -1518,7 +1524,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
           <div className="text-center max-w-3xl mx-auto mb-10">
             <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-800 text-xs font-bold px-3.5 py-1.5 rounded-full border border-emerald-200 mb-3 shadow-xs">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>১০০% খাঁটি ও বিশ্বস্ত প্রাকৃতিক উৎস</span>
+              <span>খাঁটি ও বিশ্বস্ত প্রাকৃতিক উৎস</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight leading-snug">
               খাঁটি মধু, রাজশাহীর আম ও খাঁটি গুড় — কেন{" "}
@@ -1539,7 +1545,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                 🍯
               </div>
               <h3 className="font-extrabold text-base text-stone-900 mb-2">
-                ১০০% খাঁটি প্রাকৃতিক মধু (Pure Natural Honey)
+                খাঁটি প্রাকৃতিক মধু (Pure Natural Honey)
               </h3>
               <p className="text-xs text-stone-600 leading-relaxed">
                 গ্রাম-বাংলার প্রাকৃতিক মৌচাক, নির্ভরযোগ্য মৌয়াল ও সুন্দরবনের সেরা প্রাকৃতিক মধু (সরিষা, খলিশা, লিচু ও কালোজিরা ফুল)। কোনো প্রকার হিটিং প্রসেসিং বা কৃত্রিম চিনি ছাড়া সম্পূর্ণ কাঁচা (Raw) ও পুষ্টিকর মধু যা রোগ প্রতিরোধ ক্ষমতা বাড়ায়।
@@ -2380,7 +2386,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
 
                 <div className="pt-2 border-t border-stone-200/80 flex flex-wrap items-center justify-between gap-2 text-[11px] text-stone-500">
                   <span>📍 সকল পণ্য নাটোর থেকে সরাসরি পাঠানো হয়।</span>
-                  <span>🛡️ ১০০% খাঁটি পণ্য ও নিরাপদ প্যাকেজিংয়ের নিশ্চয়তা।</span>
+                  <span>🛡️ খাঁটি পণ্য ও নিরাপদ প্যাকেজিংয়ের নিশ্চয়তা।</span>
                 </div>
               </div>
             </div>
@@ -2419,7 +2425,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
           <div>
             <p className="font-bold text-stone-200 text-sm">{tenant.name}</p>
-            <p className="mt-1">১০০% প্রাকৃতিক ও খাঁটি উপাদানের বিশ্বস্ত ঠিকানা।</p>
+            <p className="mt-1">প্রাকৃতিক ও খাঁটি উপাদানের বিশ্বস্ত ঠিকানা।</p>
           </div>
           <div className="flex items-center gap-4 text-stone-500">
             <span>© {new Date().getFullYear()} {tenant.name}। সর্বস্বত্ব সংরক্ষিত।</span>

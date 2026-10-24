@@ -7,9 +7,9 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://khatibari.smanas.net";
-  const title = "খাঁটি বাড়ি — ১০০% খাঁটি প্রাকৃতিক মধু, রাজশাহীর আম ও খাঁটি গুড়ের বিশ্বস্ত প্রতিষ্ঠান";
+  const title = "খাঁটি বাড়ি — প্রাকৃতিক মধু, রাজশাহীর আম ও খাঁটি গুড়ের বিশ্বস্ত প্রতিষ্ঠান";
   const description =
-    "গ্রাম-বাংলার প্রাকৃতিক মৌচাক ও সুন্দরবনের ১০০% খাঁটি প্রাকৃতিক মধু, রাজশাহীর মিষ্টি আম ও খাঁটি খেজুরের গুড় কিনুন সরাসরি মৌয়াল ও বাগান থেকে। সারাদেশে ক্যাশ অন ডেলিভারি।";
+    "গ্রাম-বাংলার প্রাকৃতিক মৌচাক ও সুন্দরবনের খাঁটি প্রাকৃতিক মধু, রাজশাহীর মিষ্টি আম ও খাঁটি খেজুরের গুড় কিনুন সরাসরি মৌয়াল ও বাগান থেকে। সারাদেশে ক্যাশ অন ডেলিভারি।";
 
   return {
     title,
@@ -60,7 +60,7 @@ export async function generateMetadata(): Promise<Metadata> {
           width: 1376,
           height: 768,
           type: "image/jpeg",
-          alt: "খাঁটি বাড়ি - ১০০% প্রাকৃতিক খাদ্যোপাদান",
+          alt: "খাঁটি বাড়ি - প্রাকৃতিক খাদ্যোপাদান",
         },
       ],
     },

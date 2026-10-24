@@ -7,15 +7,13 @@ const client = createClient({
 async function run() {
   await client.execute({
     sql: `UPDATE "Tenant" 
-          SET "slug" = 'khatibari', 
-              "name" = 'খাঁটি বাড়ি', 
-              "tagline" = '১০০% প্রাকৃতিক ও খাঁটি উপাদানের বিশ্বস্ত প্রতিষ্ঠান' 
-          WHERE "slug" = 'khati-shombhar' OR "slug" = 'khatibari';`,
+          SET "tagline" = 'প্রাকৃতিক ও নির্ভেজাল খাদ্যের বিশ্বস্ত প্রতিষ্ঠান' 
+          WHERE "slug" = 'khatibari' OR "slug" = 'khati-bari' OR "slug" = 'khati-shombhar';`,
     args: [],
   });
 
-  const res = await client.execute('SELECT * FROM "Tenant";');
-  console.log('Tenants in dev.db:', res.rows);
+  const res = await client.execute('SELECT slug, name, tagline FROM "Tenant";');
+  console.log('Updated Tenants:', res.rows);
 }
 
 run().catch(console.error);
