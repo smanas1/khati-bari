@@ -34,6 +34,8 @@ import {
   MapPin,
   Scale,
   ArrowRight,
+  Flame,
+  Zap,
 } from "lucide-react";
 import {
   COURIER_SERVICES,
@@ -861,7 +863,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
 
             {/* Right Column: Visual Product Showcase */}
             <div className="lg:col-span-5 relative flex items-center justify-center pt-4 lg:pt-0">
-              <div className="relative w-full max-w-sm rounded-3xl overflow-hidden border-2 border-white/20 shadow-2xl bg-emerald-900/50 backdrop-blur-md group">
+              <div className="relative w-full max-w-sm rounded-3xl overflow-hidden border-2 border-emerald-400/40 shadow-2xl bg-emerald-900/50 backdrop-blur-md group ring-4 ring-emerald-500/20">
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-stone-900">
                   <Image
                     src={heroImage}
@@ -871,46 +873,60 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                     priority
                     className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-                  <div className="absolute top-3 right-3 bg-amber-400 text-emerald-950 text-[11px] font-black px-2.5 py-1 rounded-full shadow">
-                    বেস্টসেলার
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                  <div className="absolute top-3 right-3 bg-gradient-to-r from-amber-400 to-amber-500 text-emerald-950 text-[11px] font-black px-3 py-1 rounded-full shadow-lg flex items-center gap-1 border border-amber-200">
+                    <Flame className="w-3.5 h-3.5 fill-emerald-950 text-emerald-950" />
+                    <span>হট বেস্টসেলার • প্রাকৃতিক চাকের মধু</span>
+                  </div>
+
+                  <div className="absolute bottom-3 left-3 right-3 bg-stone-950/85 backdrop-blur-md text-white px-3 py-2 rounded-xl border border-white/15 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-bold text-emerald-300 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                        রেডি স্টক • লাইভ ডেলিভারি
+                      </p>
+                      <p className="text-xs font-black text-white">প্রাকৃতিক চাকের খাঁটি মধু (কাঁচা)</p>
+                    </div>
+                    <span className="text-[11px] font-black text-amber-300 bg-amber-400/20 px-2 py-0.5 rounded-lg border border-amber-400/30">
+                      স্টকে রেডি
+                    </span>
                   </div>
                 </div>
               </div>
 
               {/* Floating Mango Card */}
               <div className="absolute -top-3 -left-2 sm:-left-6 bg-white/95 backdrop-blur-md p-1.5 sm:p-2 rounded-2xl shadow-xl border border-stone-200/90 flex items-center gap-2 sm:gap-2.5 z-20 hover:scale-105 transition-transform">
-                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl overflow-hidden relative border border-amber-200 flex-shrink-0 bg-stone-100">
+                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl overflow-hidden relative border border-stone-200 flex-shrink-0 bg-stone-100">
                   <Image
                     src="/products/mango.jpg"
                     alt="Mango"
                     fill
                     sizes="44px"
                     priority
-                    className="object-cover"
+                    className="object-cover opacity-90"
                   />
                 </div>
                 <div className="pr-1.5 sm:pr-2">
-                  <span className="text-[9px] sm:text-[10px] text-stone-500 font-bold block">সিজনাল বাছাই</span>
-                  <span className="text-[11px] sm:text-xs font-black text-emerald-950 block">মিষ্টি পাকা আম 🥭</span>
+                  <span className="text-[9px] sm:text-[10px] text-stone-500 font-bold block">সিজনাল • শীঘ্রই আসছে</span>
+                  <span className="text-[11px] sm:text-xs font-black text-stone-800 block">মিষ্টি পাকা আম 🥭</span>
                 </div>
               </div>
 
               {/* Floating Gur Card (Hidden on mobile screens to prevent overlap with rating badge) */}
               <div className="hidden sm:flex absolute -bottom-3 -left-4 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-stone-200/90 items-center gap-2.5 z-20 hover:scale-105 transition-transform">
-                <div className="w-11 h-11 rounded-xl overflow-hidden relative border border-amber-200 flex-shrink-0 bg-stone-100">
+                <div className="w-11 h-11 rounded-xl overflow-hidden relative border border-stone-200 flex-shrink-0 bg-stone-100">
                   <Image
                     src="/products/gur.jpg"
                     alt="Gur"
                     fill
                     sizes="44px"
                     priority
-                    className="object-cover"
+                    className="object-cover opacity-90"
                   />
                 </div>
                 <div className="pr-2">
-                  <span className="text-[10px] text-stone-500 font-bold block">ঐতিহ্যবাহী</span>
-                  <span className="text-xs font-black text-amber-900 block">খাঁটি খেজুরের গুড় 🏺</span>
+                  <span className="text-[10px] text-stone-500 font-bold block">ঐতিহ্যবাহী • শীঘ্রই আসছে</span>
+                  <span className="text-xs font-black text-stone-800 block">খাঁটি খেজুরের গুড় 🏺</span>
                 </div>
               </div>
 
@@ -1073,19 +1089,28 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
               const isComingSoon = Boolean(p.isComingSoon);
               const isOutOfStock = !isComingSoon && p.stock <= 0;
               const isLowStock = !isComingSoon && !isOutOfStock && p.stock <= 5;
+              const isInStock = !isComingSoon && !isOutOfStock;
               const isExpanded = !!expandedDesc[p.id];
 
               return (
                 <div
                   key={p.id}
-                  className={`bg-white rounded-3xl p-4 sm:p-5 border shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1 ${
-                    isComingSoon
-                      ? "border-amber-300/80 ring-1 ring-amber-400/20 bg-gradient-to-b from-amber-50/20 to-white"
-                      : isOutOfStock
-                      ? "border-stone-300/80 opacity-90"
-                      : "border-stone-200/80"
+                  className={`relative rounded-3xl p-4 sm:p-5 flex flex-col justify-between group transition-all duration-300 ${
+                    isInStock
+                      ? "bg-white border-2 border-emerald-500 shadow-xl shadow-emerald-950/15 ring-4 ring-emerald-500/10 hover:-translate-y-1.5 hover:border-emerald-600 hover:shadow-2xl"
+                      : isComingSoon
+                      ? "bg-stone-50/60 border border-stone-200/90 shadow-sm opacity-90 hover:opacity-100 hover:border-stone-300"
+                      : "bg-stone-50 border border-stone-200/80 opacity-75"
                   }`}
                 >
+                  {/* Floating Best Seller Badge for In-Stock Hero Item */}
+                  {isInStock && (
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-emerald-950 font-black text-[11px] sm:text-xs px-3.5 py-1 rounded-full shadow-lg flex items-center gap-1.5 border border-amber-200 uppercase tracking-wide whitespace-nowrap">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-950 fill-emerald-950 animate-bounce" />
+                      <span>🔥 হট সেলিং • সীমিত স্টক • এখনই অর্ডার করুন</span>
+                    </div>
+                  )}
+
                   <div>
                     {/* Product Image Container with Next.js Image */}
                     <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-stone-100 mb-4">
@@ -1107,9 +1132,14 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
 
                       {/* Top-Left Category / Status Badge */}
                       <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
-                        {isComingSoon ? (
-                          <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 text-[11px] font-black px-2.5 py-1 rounded-full shadow-md flex items-center gap-1.5 border border-amber-300/50">
-                            <Clock className="w-3.5 h-3.5 text-slate-950 animate-pulse" />
+                        {isInStock ? (
+                          <span className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-emerald-800 text-white text-[11px] font-black px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1.5 border border-emerald-400/40">
+                            <span className="w-2 h-2 rounded-full bg-emerald-300 animate-ping" />
+                            <span>রেডি স্টক • লাইভ</span>
+                          </span>
+                        ) : isComingSoon ? (
+                          <span className="bg-stone-900/80 backdrop-blur-md text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1 border border-stone-700/60">
+                            <Clock className="w-3 h-3 text-amber-400" />
                             শীঘ্রই আসছে
                           </span>
                         ) : isOutOfStock ? (
@@ -1173,6 +1203,21 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                         </button>
                       )}
                     </div>
+
+                    {/* In-Stock Value Trust Badges */}
+                    {isInStock && (
+                      <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-md border border-emerald-200">
+                          🍯 প্রাকৃতিক চাকের মধু
+                        </span>
+                        <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-md border border-amber-200">
+                          ✨ অপরিশোধিত কাঁচা (Raw)
+                        </span>
+                        <span className="inline-flex items-center gap-1 bg-stone-100 text-stone-700 text-[10px] font-bold px-2 py-0.5 rounded-md border border-stone-200">
+                          ⚡ দ্রুত ডেলিভারি
+                        </span>
+                      </div>
+                    )}
 
                     {/* Size Selector Pills (or out of stock notification) */}
                     <div className="mt-4">
@@ -1250,29 +1295,28 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                         )}
 
                         {/* Accurate Stock Status */}
-                        <div className="flex items-center gap-1.5 text-[11px] font-semibold mt-1">
+                        <div className="mt-1.5">
                           {isComingSoon ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-100/90 border border-amber-300 px-2 py-0.5 rounded-md">
-                              <Sparkles className="w-3 h-3 text-amber-600 animate-spin" />
-                              কামিং সুন (শীঘ্রই আসছে)
+                            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-stone-500 bg-stone-100 border border-stone-200 px-2.5 py-0.5 rounded-md">
+                              <Clock className="w-3 h-3 text-stone-400" />
+                              সিজন এলে পাওয়া যাবে
                             </span>
                           ) : isOutOfStock ? (
-                            <>
+                            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-rose-600">
                               <span className="w-2 h-2 rounded-full bg-rose-500" />
-                              <span className="text-rose-600">স্টক শেষ (Out of Stock)</span>
-                            </>
-                          ) : isLowStock ? (
-                            <>
-                              <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-                              <span className="text-amber-700 font-bold">
-                                মাত্র {p.stock} টি স্টকে অবশিষ্ট!
-                              </span>
-                            </>
+                              <span>স্টক শেষ (Out of Stock)</span>
+                            </div>
                           ) : (
-                            <>
-                              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                              <span className="text-emerald-700">স্টকে আছে ({p.stock} টি)</span>
-                            </>
+                            <div className="space-y-1">
+                              <div className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-md shadow-xs">
+                                <Flame className="w-3.5 h-3.5 text-rose-600 fill-rose-600 animate-pulse" />
+                                <span>সীমিত স্টক! মাত্র {p.stock} টি অবশিষ্ট • দ্রুত শেষ হচ্ছে</span>
+                              </div>
+                              <div className="text-[10px] text-emerald-800 font-bold flex items-center gap-1">
+                                <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
+                                <span>আজকের অর্ডারে কালই সারা দেশে হোম ডেলিভারি</span>
+                              </div>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -1328,10 +1372,10 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                         }}
                         className={`p-3 rounded-xl border transition flex items-center justify-center shadow-sm active:scale-95 ${
                           isComingSoon
-                            ? "border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900"
+                            ? "border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-600"
                             : isOutOfStock
                             ? "border-stone-200 bg-stone-100 text-stone-400 cursor-not-allowed"
-                            : "border-stone-200 hover:bg-stone-100 text-emerald-700 bg-white"
+                            : "border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800"
                         }`}
                       >
                         <MessageCircle className="w-5 h-5 text-emerald-600" />
@@ -1349,7 +1393,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                             ? "border-stone-200 bg-stone-100 text-stone-400 cursor-not-allowed"
                             : addedItemKey === `${p.id}_${activeVariant.unit}`
                             ? "border-amber-400 bg-amber-100 text-emerald-950 scale-105"
-                            : "border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800"
+                            : "border-emerald-400 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 ring-2 ring-emerald-500/10"
                         }`}
                       >
                         {addedItemKey === `${p.id}_${activeVariant.unit}` ? (
@@ -1367,9 +1411,9 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                           )}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="flex-1 py-3 px-4 rounded-xl font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-emerald-950 shadow-amber-500/20 hover:shadow-lg hover:scale-[1.01]"
+                          className="flex-1 py-3 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all active:scale-95 bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300"
                         >
-                          <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-950" />
+                          <Clock className="w-4 h-4 text-stone-500" />
                           <span>শীঘ্রই আসছে — অগ্রিম বুকিং</span>
                         </a>
                       ) : (
@@ -1378,10 +1422,10 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                           onClick={() => handleDirectOrder(p, activeVariant, cardQty)}
                           disabled={isOutOfStock}
                           aria-label="অর্ডার করুন"
-                          className={`flex-1 py-3 px-4 rounded-xl font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 ${
+                          className={`flex-1 py-3 px-4 rounded-xl font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-xl transition-all active:scale-95 ${
                             isOutOfStock
                               ? "bg-stone-200 text-stone-500 cursor-not-allowed"
-                              : "bg-emerald-800 hover:bg-emerald-900 text-white shadow-emerald-950/20 hover:shadow-lg hover:scale-[1.01]"
+                              : "bg-gradient-to-r from-emerald-600 via-emerald-700 to-emerald-900 hover:from-emerald-500 hover:to-emerald-800 text-white shadow-emerald-950/30 border border-emerald-400/50 hover:scale-[1.02] ring-2 ring-emerald-400/30"
                           }`}
                         >
                           {isOutOfStock ? (
@@ -1391,8 +1435,8 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                             </>
                           ) : (
                             <>
-                              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300" />
-                              <span>অর্ডার করুন (১ ক্লিকে)</span>
+                              <Zap className="w-5 h-5 text-amber-300 fill-amber-300 animate-bounce" />
+                              <span>⚡ এখনই অর্ডার করুন (ক্যাশ অন ডেলিভারি)</span>
                             </>
                           )}
                         </button>
