@@ -921,9 +921,9 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
                     <label className="text-xs font-bold text-stone-600 mb-1 block">ডেলিভারি চার্জ (৳)</label>
                     <div className="grid grid-cols-3 gap-2">
                       {[
-                        { name: "deliveryLocal", label: "রাজশাহী", val: tenant.deliveryLocal },
-                        { name: "deliveryDhaka", label: "ঢাকা", val: tenant.deliveryDhaka },
-                        { name: "deliveryOutside", label: "অন্যান্য", val: tenant.deliveryOutside },
+                        { name: "deliveryLocal", label: "নাটোর/লোকাল", val: tenant.deliveryLocal },
+                        { name: "deliveryDhaka", label: "ঢাকা সিটি", val: tenant.deliveryDhaka || 120 },
+                        { name: "deliveryOutside", label: "সারা দেশ", val: tenant.deliveryOutside || 130 },
                       ].map((f) => (
                         <div key={f.name}>
                           <span className="text-[10px] text-stone-500 block mb-0.5">{f.label}</span>

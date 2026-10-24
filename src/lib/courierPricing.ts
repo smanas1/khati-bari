@@ -172,17 +172,17 @@ export function calculateCourierCharge(
           explanation = `১ কেজি ৳৭০ + অতিরিক্ত ${extraKg} কেজি × ৳১৫ = ৳${charge}`;
         }
       } else if (area === "DHAKA") {
-        // Natore to Dhaka Home Delivery: 1kg ৳110, extra +৳20/kg
+        // Natore to Dhaka Home Delivery: 1kg ৳120 (minimum ৳120), extra +৳20/kg
         if (safeWeight <= 1.0) {
-          charge = 110;
-          explanation = "১ কেজি পর্যন্ত ঢাকা হোম ডেলিভারি ৳১১০";
+          charge = 120;
+          explanation = "১ কেজি পর্যন্ত ঢাকা হোম ডেলিভারি ৳১২০";
         } else {
           const extraKg = Math.ceil(safeWeight - 1.0);
-          charge = 110 + extraKg * 20;
-          explanation = `১ কেজি ৳১১০ + অতিরিক্ত ${extraKg} কেজি × ৳২০ = ৳${charge}`;
+          charge = 120 + extraKg * 20;
+          explanation = `১ কেজি ৳১২০ + অতিরিক্ত ${extraKg} কেজি × ৳২০ = ৳${charge}`;
         }
       } else {
-        // Natore to Outside Dhaka (District to District): 1kg ৳130, extra +৳25/kg
+        // Natore to Outside Dhaka (District to District): 1kg ৳130 (minimum ৳120), extra +৳25/kg
         if (safeWeight <= 1.0) {
           charge = 130;
           explanation = "১ কেজি পর্যন্ত জেলা ডেলিভারি ৳১৩০";
@@ -213,10 +213,10 @@ export function calculateCourierCharge(
           explanation = `২ কেজি ৳৯০ + অতিরিক্ত ${extraKg} কেজি × ৳২০ = ৳${charge}`;
         }
       } else if (area === "DHAKA") {
-        // OSD to ISD (Dhaka)
+        // OSD to ISD (Dhaka) - Minimum ৳120
         if (safeWeight <= 0.5) {
-          charge = 110;
-          explanation = "০-৫০০ গ্রাম ঢাকা ৳১১০";
+          charge = 120;
+          explanation = "০-৫০০ গ্রাম ঢাকা ৳১২০";
         } else if (safeWeight <= 1.0) {
           charge = 130;
           explanation = "৫০০ গ্রাম - ১ কেজি ঢাকা ৳১৩০";
@@ -229,10 +229,10 @@ export function calculateCourierCharge(
           explanation = `২ কেজি ৳১৭০ + অতিরিক্ত ${extraKg} কেজি × ৳২৫ = ৳${charge}`;
         }
       } else {
-        // OSD to OSD (Outside Dhaka)
+        // OSD to OSD (Outside Dhaka) - Minimum ৳120
         if (safeWeight <= 0.5) {
-          charge = 120;
-          explanation = "০-৫০০ গ্রাম সারা দেশ ৳১২০";
+          charge = 125;
+          explanation = "০-৫০০ গ্রাম সারা দেশ ৳১২৫";
         } else if (safeWeight <= 1.0) {
           charge = 145;
           explanation = "৫০০ গ্রাম - ১ কেজি সারা দেশ ৳১৪৫";
@@ -259,25 +259,22 @@ export function calculateCourierCharge(
           explanation = `লোকাল শাখা ডেলিভারি ৳${charge}`;
         }
       } else {
-        // Counter pickup (Dhaka or Outside):
-        // For small packages (Honey/Gur up to 3.5kg)
+        // Counter pickup (Dhaka or Outside): Minimum ৳120
         if (safeWeight <= 1.5) {
-          charge = 100;
-          explanation = "১.৫ কেজি পলি/কার্টুন কাউন্টার ডেলিভারি ৳১০০";
+          charge = 120;
+          explanation = "১.৫ কেজি পর্যন্ত কাউন্টার ডেলিভারি ৳১২০";
         } else if (safeWeight <= 2.0) {
-          charge = 130;
-          explanation = "২ কেজি পার্সেল কাউন্টার ডেলিভারি ৳১৩০";
+          charge = 140;
+          explanation = "২ কেজি পার্সেল কাউন্টার ডেলিভারি ৳১৪০";
         } else if (safeWeight <= 3.5) {
-          charge = 160;
-          explanation = "৩.৫ কেজি পর্যন্ত কাউন্টার ডেলিভারি ৳১৬০";
+          charge = 170;
+          explanation = "৩.৫ কেজি পর্যন্ত কাউন্টার ডেলিভারি ৳১৭০";
         } else {
           // Heavy Carton / Fruit (Mango Crate 5kg, 10kg, 20kg)
-          // Base booking: ৳30 + ৳12/kg (Dhaka) or ৳13/kg (Outside)
           const perKgRate = area === "DHAKA" ? 12 : 13;
           const billedKg = Math.ceil(safeWeight);
           const rawCharge = 30 + billedKg * perKgRate;
-          // Round to neat 10s (e.g. ৳100 instead of ৳102) with min ৳100 for counter parcels
-          charge = Math.max(100, Math.round(rawCharge / 10) * 10);
+          charge = Math.max(120, Math.round(rawCharge / 10) * 10);
           explanation = `ভারী কার্টুন বেস ৳৩০ + (${billedKg} কেজি × ৳${perKgRate}) = ৳${charge}`;
         }
       }
@@ -290,31 +287,37 @@ export function calculateCourierCharge(
         charge = 60;
         explanation = "লোকাল কাউন্টার পার্সেল ৳৬০";
       } else {
+        // Minimum ৳120 for non-local delivery
         if (safeWeight <= 1.0) {
-          charge = 80;
-          explanation = "১ কেজি পর্যন্ত কাউন্টার পার্সেল ৳৮০";
-        } else if (safeWeight <= 2.0) {
-          charge = 100;
-          explanation = "২ কেজি পর্যন্ত কাউন্টার পার্সেল ৳১০০";
-        } else if (safeWeight <= 3.0) {
           charge = 120;
-          explanation = "৩ কেজি পর্যন্ত কাউন্টার পার্সেল ৳১২০";
+          explanation = "১ কেজি পর্যন্ত কাউন্টার পার্সেল ৳১২০";
+        } else if (safeWeight <= 2.0) {
+          charge = 130;
+          explanation = "২ কেজি পর্যন্ত কাউন্টার পার্সেল ৳১৩০";
+        } else if (safeWeight <= 3.0) {
+          charge = 140;
+          explanation = "৩ কেজি পর্যন্ত কাউন্টার পার্সেল ৳১৪০";
         } else if (safeWeight <= 5.0) {
-          charge = 150;
-          explanation = "৫ কেজি পর্যন্ত ফ্রুটস/কার্টুন ৳১৫০";
+          charge = 160;
+          explanation = "৫ কেজি পর্যন্ত ফ্রুটস/কার্টুন ৳১৬০";
         } else if (safeWeight <= 10.0) {
-          charge = 200;
-          explanation = "১০ কেজি পর্যন্ত ফ্রুটস/কার্টুন ৳২০০";
+          charge = 210;
+          explanation = "১০ কেজি পর্যন্ত ফ্রুটস/কার্টুন ৳২১০";
         } else if (safeWeight <= 20.0) {
-          charge = 280;
-          explanation = "২০ কেজি পর্যন্ত ফ্রুটস/কার্টুন ৳২৮০";
+          charge = 290;
+          explanation = "২০ কেজি পর্যন্ত ফ্রুটস/কার্টুন ৳২৯০";
         } else {
-          charge = 280 + Math.ceil(safeWeight - 20) * 12;
-          explanation = `২০ কেজি ৳২৮০ + অতিরিক্ত কেজি ৳১২`;
+          charge = 290 + Math.ceil(safeWeight - 20) * 12;
+          explanation = `২০ কেজি ৳২৯০ + অতিরিক্ত কেজি ৳১২`;
         }
       }
       break;
     }
+  }
+
+  // Absolute guard: minimum ৳120 for any delivery inside Dhaka or outside Dhaka
+  if (area !== "LOCAL" && charge < 120) {
+    charge = 120;
   }
 
   return { charge, weightUsed: safeWeight, explanation };

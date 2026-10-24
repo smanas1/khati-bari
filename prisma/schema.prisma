@@ -17,7 +17,7 @@ model Tenant {
   whatsapp        String // যেমন: "8801700000000"
   fbPageUrl       String?
   deliveryLocal   Int       @default(60) // রাজশাহী সিটি
-  deliveryDhaka   Int       @default(100) // ঢাকা সিটি
+  deliveryDhaka   Int       @default(120) // ঢাকা সিটি
   deliveryOutside Int       @default(130) // সারা বাংলাদেশ
   enabledCouriers String?   @default("steadfast,pathao,sundarban,sa_paribahan")
   products        Product[]
