@@ -12,6 +12,19 @@
 export type CourierId = "steadfast" | "pathao" | "sundarban" | "sa_paribahan";
 export type DeliveryAreaKey = "LOCAL" | "DHAKA" | "OUTSIDE";
 
+export const ALL_COURIER_IDS: CourierId[] = ["steadfast", "pathao", "sundarban", "sa_paribahan"];
+
+export function parseEnabledCouriers(enabledStr?: string | null): CourierId[] {
+  if (!enabledStr || typeof enabledStr !== "string") {
+    return [...ALL_COURIER_IDS];
+  }
+  const parts = enabledStr
+    .split(",")
+    .map((s) => s.trim().toLowerCase()) as CourierId[];
+  const valid = parts.filter((id): id is CourierId => ALL_COURIER_IDS.includes(id));
+  return valid.length > 0 ? valid : ["steadfast"];
+}
+
 export interface CourierServiceInfo {
   id: CourierId;
   name: string;
@@ -318,8 +331,13 @@ export interface CourierComparisonResult {
   savingsVsHighest: number;
 }
 
-export function compareAllCouriers(area: DeliveryAreaKey, weightKg: number): CourierComparisonResult[] {
-  const courierIds: CourierId[] = ["steadfast", "pathao", "sundarban", "sa_paribahan"];
+export function compareAllCouriers(
+  area: DeliveryAreaKey,
+  weightKg: number,
+  enabledList?: CourierId[]
+): CourierComparisonResult[] {
+  const courierIds: CourierId[] =
+    enabledList && enabledList.length > 0 ? enabledList : ALL_COURIER_IDS;
   
   const results = courierIds.map((id) => {
     const calc = calculateCourierCharge(id, area, weightKg);

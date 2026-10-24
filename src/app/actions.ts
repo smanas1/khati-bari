@@ -45,6 +45,7 @@ export async function getOrInitTenant(rawSlug: string = "khatibari") {
         name: (slug === "khatibari" || slug === "khati-bari" || slug === "khati-shombhar") ? "খাঁটি বাড়ি" : slug.toUpperCase(),
         tagline: "প্রাকৃতিক ও নির্ভেজাল খাদ্যের বিশ্বস্ত প্রতিষ্ঠান",
         whatsapp: "8801700000000",
+        enabledCouriers: "steadfast,pathao,sundarban,sa_paribahan",
         products: {
           create: [
             {
@@ -296,19 +297,35 @@ export async function updateOrderStatusAction(orderId: string, status: string, s
 // ─── 7. স্টোরের সেটিংস আপডেট (Admin) ────────────────────────────────────────
 export async function updateTenantSettingsAction(tenantId: string, slug: string, formData: FormData) {
   await requireAdmin();
+  const updateData: Record<string, any> = {
+    name: String(formData.get("name")),
+    tagline: String(formData.get("tagline") || ""),
+    whatsapp: String(formData.get("whatsapp")),
+    deliveryLocal: Number(formData.get("deliveryLocal")),
+    deliveryDhaka: Number(formData.get("deliveryDhaka")),
+    deliveryOutside: Number(formData.get("deliveryOutside")),
+  };
+  if (formData.has("enabledCouriers")) {
+    updateData.enabledCouriers = String(formData.get("enabledCouriers") || "");
+  }
   await prisma.tenant.update({
     where: { id: tenantId },
-    data: {
-      name: String(formData.get("name")),
-      tagline: String(formData.get("tagline") || ""),
-      whatsapp: String(formData.get("whatsapp")),
-      deliveryLocal: Number(formData.get("deliveryLocal")),
-      deliveryDhaka: Number(formData.get("deliveryDhaka")),
-      deliveryOutside: Number(formData.get("deliveryOutside")),
-    },
+    data: updateData,
   });
   revalidatePath(`/${slug}`);
   revalidatePath(`/${slug}/admin`);
+}
+
+// ─── 7.1 কুরিয়ার সার্ভিস অন/অফ আপডেট করা (Admin) ─────────────────────────
+export async function updateEnabledCouriersAction(tenantId: string, slug: string, enabledCouriers: string) {
+  await requireAdmin();
+  const updated = await prisma.tenant.update({
+    where: { id: tenantId },
+    data: { enabledCouriers },
+  });
+  revalidatePath(`/${slug}`);
+  revalidatePath(`/${slug}/admin`);
+  return { success: true, enabledCouriers: updated.enabledCouriers };
 }
 
 // ─── 8. অ্যাডমিন পাসওয়ার্ড ভেরিফিকেশন ────────────────────────────────────

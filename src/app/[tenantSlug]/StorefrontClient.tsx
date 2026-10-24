@@ -46,6 +46,7 @@ import {
   calculateCourierCharge,
   compareAllCouriers,
   POPULAR_PRODUCT_PRESETS,
+  parseEnabledCouriers,
 } from "@/lib/courierPricing";
 
 interface TenantProduct {
@@ -103,6 +104,7 @@ interface TenantData {
   deliveryLocal: number;
   deliveryDhaka: number;
   deliveryOutside: number;
+  enabledCouriers?: string | null;
   products: TenantProduct[];
   orders: TenantOrder[];
 }
@@ -325,11 +327,23 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
 
   const effectiveCartWeightKg = totalCartWeightKg > 0 ? totalCartWeightKg : 1.0;
 
-  // Default courier is always Steadfast (হোম ডেলিভারি) unless customer explicitly selects another
+  const enabledCouriersList = parseEnabledCouriers(tenant.enabledCouriers);
+
+  // Default courier is always first available enabled courier (preferably Steadfast)
   useEffect(() => {
     if (manualCourierOverride || cart.length === 0) return;
-    setSelectedCourier("steadfast");
-  }, [cart, manualCourierOverride]);
+    const defaultCourier = enabledCouriersList.includes("steadfast")
+      ? "steadfast"
+      : enabledCouriersList[0] || "steadfast";
+    setSelectedCourier(defaultCourier);
+  }, [cart, manualCourierOverride, tenant.enabledCouriers]);
+
+  // If currently selected courier is disabled, switch to first active courier
+  useEffect(() => {
+    if (!enabledCouriersList.includes(selectedCourier)) {
+      setSelectedCourier(enabledCouriersList[0] || "steadfast");
+    }
+  }, [tenant.enabledCouriers, selectedCourier]);
 
   const currentCourierCalculation = calculateCourierCharge(
     selectedCourier,
@@ -2022,7 +2036,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                       </div>
 
                       <div className="grid grid-cols-2 gap-2">
-                        {(["steadfast", "pathao", "sundarban", "sa_paribahan"] as CourierId[]).map((cid) => {
+                        {enabledCouriersList.map((cid) => {
                           const srv = COURIER_SERVICES[cid];
                           const calc = calculateCourierCharge(cid, deliveryArea, effectiveCartWeightKg);
                           const isSel = selectedCourier === cid;
@@ -2326,12 +2340,12 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                 <div className="flex justify-between items-center mb-2.5">
                   <h4 className="text-xs sm:text-sm font-black text-emerald-950 flex items-center gap-1.5">
                     <Sparkles className="w-4 h-4 text-amber-500" />
-                    <span>৪টি কুরিয়ারের তুলনামূলক চার্জ তালিকা ({modalWeight.toFixed(1)} কেজি ওজনে):</span>
+                    <span>কুরিয়ার সার্ভিসের তুলনামূলক চার্জ তালিকা ({modalWeight.toFixed(1)} কেজি ওজনে):</span>
                   </h4>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {compareAllCouriers(modalArea, modalWeight).map((res) => {
+                  {compareAllCouriers(modalArea, modalWeight, enabledCouriersList).map((res) => {
                     const isLowest = res.isLowestPrice;
                     const isHome = res.courier.shortDeliveryType === "হোম ডেলিভারি";
 

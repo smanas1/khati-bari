@@ -11,6 +11,7 @@ import {
   updateProductPricingAction,
   updateOrderStatusAction,
   updateTenantSettingsAction,
+  updateEnabledCouriersAction,
   logoutAdminAction,
   sendTestNotificationAction,
 } from "@/app/actions";
@@ -48,6 +49,12 @@ import {
   Tag,
   Boxes,
 } from "lucide-react";
+import {
+  COURIER_SERVICES,
+  CourierId,
+  ALL_COURIER_IDS,
+  parseEnabledCouriers,
+} from "@/lib/courierPricing";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface TenantProduct {
@@ -100,6 +107,7 @@ interface TenantData {
   deliveryLocal: number;
   deliveryDhaka: number;
   deliveryOutside: number;
+  enabledCouriers?: string | null;
   products: TenantProduct[];
   orders: TenantOrder[];
 }
@@ -239,6 +247,50 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
   const [editImage, setEditImage] = useState("");
   const [editIcon, setEditIcon] = useState("🍯");
   const [editVariants, setEditVariants] = useState<VariantRow[]>([{ unit: "", price: "" }]);
+
+  // ── Delivery Partner / Courier toggle state
+  const [enabledCouriers, setEnabledCouriers] = useState<string>(
+    tenant.enabledCouriers || "steadfast,pathao,sundarban,sa_paribahan"
+  );
+  useEffect(() => {
+    if (tenant.enabledCouriers) {
+      setEnabledCouriers(tenant.enabledCouriers);
+    }
+  }, [tenant.enabledCouriers]);
+
+  const activeCouriersList = parseEnabledCouriers(enabledCouriers);
+
+  async function handleToggleCourier(courierId: CourierId) {
+    const currentList = parseEnabledCouriers(enabledCouriers);
+    let updatedList: CourierId[];
+    const isCurrentlyOn = currentList.includes(courierId);
+
+    if (isCurrentlyOn) {
+      if (currentList.length === 1) {
+        addToast("কমপক্ষে একটি কুরিয়ার সার্ভিস সক্রিয় থাকতে হবে!", "error");
+        return;
+      }
+      updatedList = currentList.filter((id) => id !== courierId);
+    } else {
+      updatedList = [...currentList, courierId];
+    }
+
+    const newStr = updatedList.join(",");
+    setEnabledCouriers(newStr);
+
+    try {
+      await updateEnabledCouriersAction(tenant.id, tenant.slug, newStr);
+      const srvName = COURIER_SERVICES[courierId].banglaName;
+      addToast(
+        !isCurrentlyOn
+          ? `"${srvName}" সফলভাবে চালু করা হয়েছে!`
+          : `"${srvName}" সফলভাবে বন্ধ করা হয়েছে!`
+      );
+    } catch {
+      setEnabledCouriers(enabledCouriers);
+      addToast("কুরিয়ার সেটিংস আপডেট ব্যর্থ হয়েছে!", "error");
+    }
+  }
 
   // ── Quick direct stock inputs map (key: productId, val: typed quantity string)
   const [quickStockInputs, setQuickStockInputs] = useState<Record<string, string>>({});
@@ -893,6 +945,94 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
                     {isPending ? "আপডেট হচ্ছে..." : "সেটিংস সেভ করুন"}
                   </button>
                 </form>
+              </div>
+            </div>
+
+            {/* ── Delivery Partner & Courier Control (Steadfast, Pathao, Sundarban, SA Paribahan) ── */}
+            <div className="bg-white rounded-2xl border border-stone-200/80 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100 bg-stone-50/60">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center flex-shrink-0 shadow-xs">
+                    <Truck className="w-4.5 h-4.5" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-base text-emerald-950">কুরিয়ার ও ডেলিভারি পার্টনার</h3>
+                    <p className="text-[11px] text-stone-500 font-medium">কাস্টমার কোন কোন কুরিয়ারে অর্ডার করতে পারবে তা নিয়ন্ত্রণ করুন</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 space-y-2.5">
+                {ALL_COURIER_IDS.map((cid) => {
+                  const srv = COURIER_SERVICES[cid];
+                  const isEnabled = activeCouriersList.includes(cid);
+                  const isHome = srv.shortDeliveryType === "হোম ডেলিভারি";
+
+                  return (
+                    <div
+                      key={cid}
+                      className={`p-3 rounded-2xl border transition-all ${
+                        isEnabled
+                          ? "bg-white border-stone-200 shadow-xs"
+                          : "bg-stone-50/70 border-stone-200/60 opacity-60"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-black text-sm text-stone-900">
+                              {srv.banglaName}
+                            </span>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                isHome
+                                  ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                  : "bg-amber-100 text-amber-900 border border-amber-200"
+                              }`}
+                            >
+                              {srv.shortDeliveryType}
+                            </span>
+                            <span className="text-[10px] text-stone-400 font-medium">
+                              ⏱️ {srv.duration}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-stone-500 mt-1 leading-snug">
+                            {srv.bestFor}
+                          </p>
+                        </div>
+
+                        {/* Toggle Switch */}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleCourier(cid)}
+                          disabled={isPending}
+                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                            isEnabled ? "bg-emerald-600" : "bg-stone-300"
+                          }`}
+                          title={isEnabled ? `${srv.banglaName} বন্ধ করতে ক্লিক করুন` : `${srv.banglaName} চালু করতে ক্লিক করুন`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                              isEnabled ? "translate-x-5" : "translate-x-0"
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Practical Tip for Admin */}
+                <div className="bg-amber-50/90 rounded-xl p-3 border border-amber-200/80 text-[11px] text-amber-950 space-y-1">
+                  <div className="font-black text-amber-900 flex items-center gap-1">
+                    <span>💡</span>
+                    <span>কুরিয়ার ব্যবহারের সেরা পরামর্শ:</span>
+                  </div>
+                  <p className="leading-relaxed">
+                    • <strong>মধু ও গুড় বিক্রির সময়:</strong> সুন্দরবন ও এস এ পরিবহন বন্ধ রাখতে পারেন, কারণ সাধারণ কাস্টমাররা হোম ডেলিভারি চায়।<br />
+                    • <strong>আমের মৌসুমে:</strong> সুন্দরবন ও এস এ পরিবহন অবশ্যই অন করে দিন। কারণ ৫-২০ কেজি আম হোম ডেলিভারিতে খরচ অনেক বেশি (৳৫০০-৮০০+), অথচ সুন্দরবন কাউন্টারে কাস্টমার মাত্র ৳১৫০-২৫০ টাকায় ডেলিভারি নিতে পারে।
+                  </p>
+                </div>
               </div>
             </div>
 

@@ -19,6 +19,7 @@ model Tenant {
   deliveryLocal   Int       @default(60) // রাজশাহী সিটি
   deliveryDhaka   Int       @default(100) // ঢাকা সিটি
   deliveryOutside Int       @default(130) // সারা বাংলাদেশ
+  enabledCouriers String?   @default("steadfast,pathao,sundarban,sa_paribahan")
   products        Product[]
   orders          Order[]
   createdAt       DateTime  @default(now())
