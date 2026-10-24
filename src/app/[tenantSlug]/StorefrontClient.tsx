@@ -1095,22 +1095,14 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
               return (
                 <div
                   key={p.id}
-                  className={`relative rounded-3xl p-4 sm:p-5 flex flex-col justify-between group transition-all duration-300 ${
+                  className={`relative rounded-3xl p-4 sm:p-5 flex flex-col justify-between group transition-all duration-300 bg-white border ${
                     isInStock
-                      ? "bg-white border-2 border-emerald-500 shadow-xl shadow-emerald-950/15 ring-4 ring-emerald-500/10 hover:-translate-y-1.5 hover:border-emerald-600 hover:shadow-2xl"
+                      ? "border-emerald-200/90 shadow-sm hover:shadow-xl hover:border-emerald-500/50"
                       : isComingSoon
-                      ? "bg-stone-50/60 border border-stone-200/90 shadow-sm opacity-90 hover:opacity-100 hover:border-stone-300"
-                      : "bg-stone-50 border border-stone-200/80 opacity-75"
+                      ? "border-stone-200/90 shadow-xs opacity-90 hover:opacity-100"
+                      : "border-stone-200/80 opacity-75"
                   }`}
                 >
-                  {/* Floating Best Seller Badge for In-Stock Hero Item */}
-                  {isInStock && (
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-emerald-950 font-black text-[11px] sm:text-xs px-3.5 py-1 rounded-full shadow-lg flex items-center gap-1.5 border border-amber-200 uppercase tracking-wide whitespace-nowrap">
-                      <Sparkles className="w-3.5 h-3.5 text-emerald-950 fill-emerald-950 animate-bounce" />
-                      <span>🔥 হট সেলিং • সীমিত স্টক • এখনই অর্ডার করুন</span>
-                    </div>
-                  )}
-
                   <div>
                     {/* Product Image Container with Next.js Image */}
                     <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-stone-100 mb-4">
@@ -1133,24 +1125,24 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                       {/* Top-Left Category / Status Badge */}
                       <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
                         {isInStock ? (
-                          <span className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-emerald-800 text-white text-[11px] font-black px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1.5 border border-emerald-400/40">
-                            <span className="w-2 h-2 rounded-full bg-emerald-300 animate-ping" />
-                            <span>রেডি স্টক • লাইভ</span>
+                          <span className="bg-emerald-900/90 backdrop-blur-md text-emerald-100 text-[11px] font-bold px-3 py-1 rounded-full shadow-sm flex items-center gap-1.5 border border-emerald-700/60">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            <span>স্টকে আছে</span>
                           </span>
                         ) : isComingSoon ? (
-                          <span className="bg-stone-900/80 backdrop-blur-md text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1 border border-stone-700/60">
-                            <Clock className="w-3 h-3 text-amber-400" />
-                            শীঘ্রই আসছে
+                          <span className="bg-stone-900/80 backdrop-blur-md text-stone-300 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1 border border-stone-700/60">
+                            <Clock className="w-3 h-3 text-stone-400" />
+                            <span>শীঘ্রই আসছে</span>
                           </span>
                         ) : isOutOfStock ? (
                           <span className="bg-rose-600/95 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
                             <AlertCircle className="w-3 h-3" />
-                            স্টক শেষ
+                            <span>স্টক শেষ</span>
                           </span>
                         ) : p.isSeasonal ? (
                           <span className="bg-amber-500/90 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
                             <Sparkles className="w-3 h-3" />
-                            সিজনাল
+                            <span>সিজনাল</span>
                           </span>
                         ) : (
                           <span className="bg-emerald-950/80 backdrop-blur-md text-emerald-100 text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm">
@@ -1204,23 +1196,8 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                       )}
                     </div>
 
-                    {/* In-Stock Value Trust Badges */}
-                    {isInStock && (
-                      <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
-                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-md border border-emerald-200">
-                          🍯 প্রাকৃতিক চাকের মধু
-                        </span>
-                        <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-md border border-amber-200">
-                          ✨ অপরিশোধিত কাঁচা (Raw)
-                        </span>
-                        <span className="inline-flex items-center gap-1 bg-stone-100 text-stone-700 text-[10px] font-bold px-2 py-0.5 rounded-md border border-stone-200">
-                          ⚡ দ্রুত ডেলিভারি
-                        </span>
-                      </div>
-                    )}
-
                     {/* Size Selector Pills (or out of stock notification) */}
-                    <div className="mt-4">
+                    <div className="mt-3.5">
                       {isOutOfStock ? (
                         <div className="bg-rose-50 border border-rose-200 text-rose-800 text-xs p-2.5 rounded-xl flex items-center gap-2">
                           <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
@@ -1231,7 +1208,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">
                               {p.category === "গুড়" || p.name.includes("গুড়")
-                                ? "ধরণ ও সাইজ নির্বাচন"
+                                ? "ধরণ ও সাইজ"
                                 : "সাইজ নির্বাচন"}
                             </span>
                             <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
@@ -1274,7 +1251,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                   </div>
 
                   {/* Bottom Area: Pricing, Quantity Stepper & Buttons */}
-                  <div className="mt-5 pt-3.5 border-t border-stone-100 space-y-3.5">
+                  <div className="mt-4 pt-3.5 border-t border-stone-100 space-y-3">
                     {/* Price & Stock Indicator Row */}
                     <div className="flex items-center justify-between">
                       <div>
@@ -1288,37 +1265,33 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                         </div>
 
                         {/* If Qty > 1, show multiplied total */}
-                        {cardQty > 1 && !isOutOfStock && !isComingSoon && (
+                        {cardQty > 1 && !isOutOfStock && !isComingSoon ? (
                           <div className="text-[11px] font-bold text-amber-800">
                             মোট: ৳{activeVariant.price * cardQty} ({cardQty} টি)
                           </div>
+                        ) : (
+                          /* Accurate Stock Status */
+                          <div className="flex items-center gap-1.5 text-[11px] font-semibold mt-0.5">
+                            {isComingSoon ? (
+                              <span className="text-stone-500">সিজন এলে পাওয়া যাবে</span>
+                            ) : isOutOfStock ? (
+                              <span className="text-rose-600 flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                স্টক শেষ
+                              </span>
+                            ) : isLowStock ? (
+                              <span className="text-amber-700 font-bold flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                মাত্র {p.stock} টি অবশিষ্ট
+                              </span>
+                            ) : (
+                              <span className="text-emerald-700 flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                স্টকে আছে ({p.stock} টি)
+                              </span>
+                            )}
+                          </div>
                         )}
-
-                        {/* Accurate Stock Status */}
-                        <div className="mt-1.5">
-                          {isComingSoon ? (
-                            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-stone-500 bg-stone-100 border border-stone-200 px-2.5 py-0.5 rounded-md">
-                              <Clock className="w-3 h-3 text-stone-400" />
-                              সিজন এলে পাওয়া যাবে
-                            </span>
-                          ) : isOutOfStock ? (
-                            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-rose-600">
-                              <span className="w-2 h-2 rounded-full bg-rose-500" />
-                              <span>স্টক শেষ (Out of Stock)</span>
-                            </div>
-                          ) : (
-                            <div className="space-y-1">
-                              <div className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-md shadow-xs">
-                                <Flame className="w-3.5 h-3.5 text-rose-600 fill-rose-600 animate-pulse" />
-                                <span>সীমিত স্টক! মাত্র {p.stock} টি অবশিষ্ট • দ্রুত শেষ হচ্ছে</span>
-                              </div>
-                              <div className="text-[10px] text-emerald-800 font-bold flex items-center gap-1">
-                                <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
-                                <span>আজকের অর্ডারে কালই সারা দেশে হোম ডেলিভারি</span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
                       </div>
 
                       {/* Quantity Stepper (hidden if out of stock or coming soon) */}
@@ -1345,7 +1318,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                       )}
                     </div>
 
-                    {/* Action Buttons: WhatsApp (icon), Cart (compact icon/button), Direct Order (large primary) */}
+                    {/* Action Buttons: WhatsApp (icon), Cart (icon), Direct Order (clean primary) */}
                     <div className="flex items-center gap-2">
                       {/* WhatsApp Order Button */}
                       <a
@@ -1362,21 +1335,15 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                         }
                         target={isOutOfStock && !isComingSoon ? "_self" : "_blank"}
                         rel="noreferrer"
-                        title={isComingSoon ? "WhatsApp-এ অগ্রিম বুকিং" : isOutOfStock ? "পণ্যটি স্টকে নেই" : "WhatsApp-এ অর্ডার"}
-                        aria-label={isComingSoon ? "WhatsApp-এ অগ্রিম বুকিং" : "WhatsApp-এ অর্ডার"}
+                        title={isComingSoon ? "WhatsApp-এ যোগাযোগ" : isOutOfStock ? "পণ্যটি স্টকে নেই" : "WhatsApp-এ অর্ডার"}
+                        aria-label={isComingSoon ? "WhatsApp-এ যোগাযোগ" : "WhatsApp-এ অর্ডার"}
                         onClick={(e) => {
                           if (isOutOfStock && !isComingSoon) {
                             e.preventDefault();
                             addToast("error", `দুঃখিত, "${p.name}" বর্তমানে স্টক শেষ!`);
                           }
                         }}
-                        className={`p-3 rounded-xl border transition flex items-center justify-center shadow-sm active:scale-95 ${
-                          isComingSoon
-                            ? "border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-600"
-                            : isOutOfStock
-                            ? "border-stone-200 bg-stone-100 text-stone-400 cursor-not-allowed"
-                            : "border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800"
-                        }`}
+                        className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 active:scale-95 text-emerald-700 flex items-center justify-center transition shadow-xs flex-shrink-0"
                       >
                         <MessageCircle className="w-5 h-5 text-emerald-600" />
                       </a>
@@ -1388,12 +1355,12 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                         disabled={isOutOfStock || isComingSoon}
                         title={isComingSoon ? "শীঘ্রই আসছে" : isOutOfStock ? "স্টক শেষ" : "কার্টে যোগ করুন"}
                         aria-label="কার্টে যোগ করুন"
-                        className={`p-3 rounded-xl border font-bold transition flex items-center justify-center shadow-sm active:scale-95 ${
+                        className={`h-11 w-11 sm:h-12 sm:w-12 rounded-xl border flex items-center justify-center transition shadow-xs active:scale-95 flex-shrink-0 ${
                           isComingSoon || isOutOfStock
                             ? "border-stone-200 bg-stone-100 text-stone-400 cursor-not-allowed"
                             : addedItemKey === `${p.id}_${activeVariant.unit}`
                             ? "border-amber-400 bg-amber-100 text-emerald-950 scale-105"
-                            : "border-emerald-400 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 ring-2 ring-emerald-500/10"
+                            : "border-stone-200 bg-white hover:bg-emerald-50 text-emerald-800"
                         }`}
                       >
                         {addedItemKey === `${p.id}_${activeVariant.unit}` ? (
@@ -1411,7 +1378,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                           )}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="flex-1 py-3 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all active:scale-95 bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300"
+                          className="flex-1 h-11 sm:h-12 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300"
                         >
                           <Clock className="w-4 h-4 text-stone-500" />
                           <span>শীঘ্রই আসছে — অগ্রিম বুকিং</span>
@@ -1422,10 +1389,10 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                           onClick={() => handleDirectOrder(p, activeVariant, cardQty)}
                           disabled={isOutOfStock}
                           aria-label="অর্ডার করুন"
-                          className={`flex-1 py-3 px-4 rounded-xl font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-xl transition-all active:scale-95 ${
+                          className={`flex-1 h-11 sm:h-12 px-4 rounded-xl font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-md transition-all active:scale-[0.98] ${
                             isOutOfStock
                               ? "bg-stone-200 text-stone-500 cursor-not-allowed"
-                              : "bg-gradient-to-r from-emerald-600 via-emerald-700 to-emerald-900 hover:from-emerald-500 hover:to-emerald-800 text-white shadow-emerald-950/30 border border-emerald-400/50 hover:scale-[1.02] ring-2 ring-emerald-400/30"
+                              : "bg-emerald-800 hover:bg-emerald-900 text-white shadow-emerald-950/20 hover:shadow-lg"
                           }`}
                         >
                           {isOutOfStock ? (
@@ -1435,8 +1402,8 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                             </>
                           ) : (
                             <>
-                              <Zap className="w-5 h-5 text-amber-300 fill-amber-300 animate-bounce" />
-                              <span>⚡ এখনই অর্ডার করুন (ক্যাশ অন ডেলিভারি)</span>
+                              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300" />
+                              <span>অর্ডার করুন</span>
                             </>
                           )}
                         </button>
