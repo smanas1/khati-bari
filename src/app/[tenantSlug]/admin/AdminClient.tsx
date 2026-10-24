@@ -1,11 +1,14 @@
 "use client";
 
-import React, { useState, useTransition, useRef } from "react";
+import React, { useState, useEffect, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   createProductAction,
   deleteProductAction,
   updateProductAction,
+  updateProductStockAction,
+  toggleProductComingSoonAction,
+  updateProductPricingAction,
   updateOrderStatusAction,
   updateTenantSettingsAction,
   logoutAdminAction,
@@ -40,6 +43,10 @@ import {
   Ban,
   Send,
   Bell,
+  Sparkles,
+  Check,
+  Tag,
+  Boxes,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -51,6 +58,7 @@ interface TenantProduct {
   price: number;
   stock: number;
   isSeasonal: boolean;
+  isComingSoon?: boolean;
   icon: string;
   image?: string | null;
   variants?: string | null;
@@ -126,6 +134,45 @@ function formatRelativeTime(date: string | Date): string {
   return d.toLocaleDateString("bn-BD", { day: "numeric", month: "short", year: "numeric" });
 }
 
+function parseProductVariants(p: TenantProduct): VariantRow[] {
+  if (p.variants) {
+    try {
+      const parsed = typeof p.variants === "string" ? JSON.parse(p.variants) : p.variants;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map((item: any) => ({
+          unit: String(item.unit || p.unit),
+          price: String(item.price || p.price),
+        }));
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  // Fallback defaults if variants are null
+  if (p.category === "মধু" || p.name.includes("মধু")) {
+    return [
+      { unit: "৫০০ মিলি", price: "650" },
+      { unit: "১ লিটার", price: "1250" },
+      { unit: "২ লিটার", price: "2400" },
+    ];
+  } else if (p.category === "আম" || p.name.includes("আম")) {
+    return [
+      { unit: "৫ কেজি", price: "450" },
+      { unit: "১০ কেজি", price: "850" },
+      { unit: "২০ কেজি", price: "1600" },
+    ];
+  } else if (p.category === "গুড়" || p.name.includes("গুড়") || p.category === "গুড়") {
+    return [
+      { unit: "পাটালি (৫০০ গ্রাম)", price: "220" },
+      { unit: "পাটালি (১ কেজি)", price: "420" },
+      { unit: "ঝোলা গুড় (১ কেজি)", price: "450" },
+      { unit: "দানা গুড় (১ কেজি)", price: "450" },
+    ];
+  }
+  return [{ unit: p.unit, price: String(p.price) }];
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function AdminClient({ tenant }: { tenant: TenantData }) {
   const router = useRouter();
@@ -169,12 +216,34 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // ── Product inline edit
-  const [editingProductId, setEditingProductId] = useState<string | null>(null);
-  const [editStock, setEditStock] = useState("");
-  const [editPrice, setEditPrice] = useState("");
+  // ── Product list local state (optimistic)
+  const [products, setProducts] = useState<TenantProduct[]>(tenant.products);
+  useEffect(() => {
+    setProducts(tenant.products);
+  }, [tenant.products]);
 
-  // ── Variant builder
+  // ── Product filter & search in Inventory tab
+  const [productFilter, setProductFilter] = useState<"ALL" | "IN_STOCK" | "LOW_STOCK" | "OUT_OF_STOCK" | "COMING_SOON">("ALL");
+  const [productSearch, setProductSearch] = useState("");
+
+  // ── Product detailed edit state
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editCategory, setEditCategory] = useState("মধু");
+  const [editUnit, setEditUnit] = useState("");
+  const [editBasePrice, setEditBasePrice] = useState("");
+  const [editStock, setEditStock] = useState("");
+  const [editIsComingSoon, setEditIsComingSoon] = useState(false);
+  const [editIsSeasonal, setEditIsSeasonal] = useState(false);
+  const [editDescription, setEditDescription] = useState("");
+  const [editImage, setEditImage] = useState("");
+  const [editIcon, setEditIcon] = useState("🍯");
+  const [editVariants, setEditVariants] = useState<VariantRow[]>([{ unit: "", price: "" }]);
+
+  // ── Quick direct stock inputs map (key: productId, val: typed quantity string)
+  const [quickStockInputs, setQuickStockInputs] = useState<Record<string, string>>({});
+
+  // ── Variant builder for new product
   const [variants, setVariants] = useState<VariantRow[]>([{ unit: "", price: "" }]);
 
   // ─── Computed stats
@@ -183,7 +252,11 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
   );
   const pendingCount = tenant.orders.filter((o) => o.status === "PENDING").length;
   const deliveredCount = tenant.orders.filter((o) => o.status === "DELIVERED").length;
-  const lowStockCount = tenant.products.filter((p) => p.stock <= 5).length;
+
+  const lowStockCount = products.filter((p) => !p.isComingSoon && p.stock <= 5 && p.stock > 0).length;
+  const outOfStockCount = products.filter((p) => !p.isComingSoon && p.stock <= 0).length;
+  const comingSoonCount = products.filter((p) => Boolean(p.isComingSoon)).length;
+  const inStockCount = products.filter((p) => !p.isComingSoon && p.stock > 0).length;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -211,6 +284,26 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
     safeCurrentPage * ORDERS_PER_PAGE
   );
 
+  // ─── Filtered products in Inventory
+  const filteredProducts = products.filter((p) => {
+    // Status filter
+    if (productFilter === "IN_STOCK" && (p.isComingSoon || p.stock <= 0)) return false;
+    if (productFilter === "LOW_STOCK" && (p.isComingSoon || p.stock > 5 || p.stock <= 0)) return false;
+    if (productFilter === "OUT_OF_STOCK" && (p.isComingSoon || p.stock > 0)) return false;
+    if (productFilter === "COMING_SOON" && !p.isComingSoon) return false;
+
+    // Search filter
+    if (productSearch.trim()) {
+      const q = productSearch.toLowerCase();
+      return (
+        p.name.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q) ||
+        p.unit.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
+
   // ─── Handlers
   async function handleLogout() {
     await logoutAdminAction();
@@ -229,25 +322,170 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
     });
   }
 
+  // ── Product Edit Handlers
   function startEditProduct(p: TenantProduct) {
     setEditingProductId(p.id);
+    setEditName(p.name);
+    setEditCategory(p.category);
+    setEditUnit(p.unit);
+    setEditBasePrice(String(p.price));
     setEditStock(String(p.stock));
-    setEditPrice(String(p.price));
+    setEditIsComingSoon(Boolean(p.isComingSoon));
+    setEditIsSeasonal(Boolean(p.isSeasonal));
+    setEditDescription(p.description || "");
+    setEditImage(p.image || "");
+    setEditIcon(p.icon || "🍯");
+    setEditVariants(parseProductVariants(p));
+  }
+
+  function addEditVariantRow() {
+    setEditVariants((prev) => [...prev, { unit: "", price: "" }]);
+  }
+
+  function removeEditVariantRow(idx: number) {
+    setEditVariants((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function updateEditVariantRow(idx: number, field: "unit" | "price", value: string) {
+    setEditVariants((prev) =>
+      prev.map((v, i) => (i === idx ? { ...v, [field]: value } : v))
+    );
   }
 
   function saveProductEdit(productId: string) {
+    const validVariants = editVariants.filter((v) => v.unit.trim() && v.price.trim());
+    const builtVariants = validVariants.length > 0
+      ? JSON.stringify(validVariants.map((v) => ({ unit: v.unit.trim(), price: Number(v.price) })))
+      : null;
+
+    const numBasePrice = Number(editBasePrice) || (validVariants.length > 0 ? Number(validVariants[0].price) : 0);
+    const numStock = Number(editStock) || 0;
+
     startTransition(async () => {
       try {
         await updateProductAction(productId, tenant.slug, {
-          stock: Number(editStock),
-          price: Number(editPrice),
+          name: editName,
+          category: editCategory,
+          unit: editUnit,
+          price: numBasePrice,
+          stock: numStock,
+          variants: builtVariants,
+          isComingSoon: editIsComingSoon,
+          isSeasonal: editIsSeasonal,
+          description: editDescription,
+          image: editImage.trim() || null,
+          icon: editIcon || "📦",
         });
+
+        setProducts((prev) =>
+          prev.map((p) =>
+            p.id === productId
+              ? {
+                  ...p,
+                  name: editName,
+                  category: editCategory,
+                  unit: editUnit,
+                  price: numBasePrice,
+                  stock: numStock,
+                  variants: builtVariants,
+                  isComingSoon: editIsComingSoon,
+                  isSeasonal: editIsSeasonal,
+                  description: editDescription,
+                  image: editImage.trim() || null,
+                  icon: editIcon || "📦",
+                }
+              : p
+          )
+        );
+
         setEditingProductId(null);
-        addToast("পণ্যের স্টক ও মূল্য আপডেট হয়েছে।");
-      } catch (err) {
-        addToast("আপডেট ব্যর্থ হয়েছে!", "error");
+        addToast(`"${editName}" এর তথ্য, মূল্য ও স্টক সফলভাবে সেভ হয়েছে!`, "success");
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "আপডেট ব্যর্থ হয়েছে!";
+        addToast(msg, "error");
       }
     });
+  }
+
+  // ── Quick 1-Click Coming Soon Toggle
+  function handleToggleComingSoon(productId: string, currentComingSoon: boolean) {
+    const newStatus = !currentComingSoon;
+    const targetProduct = products.find((p) => p.id === productId);
+    const prodName = targetProduct?.name || "পণ্য";
+
+    // Optimistic UI update
+    setProducts((prev) =>
+      prev.map((p) => (p.id === productId ? { ...p, isComingSoon: newStatus } : p))
+    );
+
+    startTransition(async () => {
+      try {
+        await toggleProductComingSoonAction(productId, tenant.slug, newStatus);
+        if (newStatus) {
+          addToast(`"${prodName}" সফলভাবে 'কামিং সুন (Coming Soon)' করা হয়েছে।`, "success");
+        } else {
+          addToast(`"${prodName}" ইন-স্টকে ফিরিয়ে আনা হয়েছে।`, "success");
+        }
+      } catch {
+        // Revert on error
+        setProducts((prev) =>
+          prev.map((p) => (p.id === productId ? { ...p, isComingSoon: currentComingSoon } : p))
+        );
+        addToast("কামিং সুন স্ট্যাটাস পরিবর্তন ব্যর্থ হয়েছে!", "error");
+      }
+    });
+  }
+
+  // ── Quick Stock / Quantity Management
+  function handleSetStock(productId: string, targetStock: number) {
+    const clamped = Math.max(0, Math.floor(targetStock));
+    const targetProduct = products.find((p) => p.id === productId);
+    const oldStock = targetProduct?.stock ?? 0;
+    const prodName = targetProduct?.name || "পণ্য";
+
+    // Optimistic UI update
+    setProducts((prev) =>
+      prev.map((p) => (p.id === productId ? { ...p, stock: clamped } : p))
+    );
+    // Clear quick input
+    setQuickStockInputs((prev) => {
+      const copy = { ...prev };
+      delete copy[productId];
+      return copy;
+    });
+
+    startTransition(async () => {
+      try {
+        await updateProductStockAction(productId, tenant.slug, clamped);
+        addToast(`"${prodName}" এর স্টক আপডেট হয়েছে (মোট ${clamped} টি)।`, "success");
+      } catch {
+        // Revert on error
+        setProducts((prev) =>
+          prev.map((p) => (p.id === productId ? { ...p, stock: oldStock } : p))
+        );
+        addToast("স্টক আপডেট ব্যর্থ হয়েছে!", "error");
+      }
+    });
+  }
+
+  function handleStockDelta(productId: string, delta: number) {
+    const targetProduct = products.find((p) => p.id === productId);
+    if (!targetProduct) return;
+    handleSetStock(productId, targetProduct.stock + delta);
+  }
+
+  function handleDeleteProduct(productId: string, productName: string) {
+    if (confirm(`"${productName}" মুছে ফেলতে নিশ্চিত?`)) {
+      startTransition(async () => {
+        try {
+          await deleteProductAction(productId, tenant.slug);
+          setProducts((prev) => prev.filter((p) => p.id !== productId));
+          addToast(`"${productName}" সফলভাবে মুছে ফেলা হয়েছে।`);
+        } catch {
+          addToast("মুছতে ব্যর্থ হয়েছে!", "error");
+        }
+      });
+    }
   }
 
   function addVariantRow() {
@@ -285,7 +523,14 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
     { label: "অপেক্ষমান", value: `${pendingCount} টি`, sub: "প্রসেস করুন", icon: Clock, color: "bg-amber-50 text-amber-700", border: "border-amber-100" },
     { label: "ডেলিভারড", value: `${deliveredCount} টি`, sub: "সম্পন্ন অর্ডার", icon: CheckCircle2, color: "bg-emerald-50 text-emerald-700", border: "border-emerald-100" },
     { label: "মোট বিক্রয়", value: `৳${totalRevenue.toLocaleString()}`, sub: "সামগ্রিক রাজস্ব", icon: TrendingUp, color: "bg-purple-50 text-purple-800", border: "border-purple-100" },
-    { label: "কম স্টক", value: `${lowStockCount} টি`, sub: "পণ্য রিস্টক করুন", icon: AlertTriangle, color: lowStockCount > 0 ? "bg-rose-50 text-rose-700" : "bg-stone-50 text-stone-500", border: lowStockCount > 0 ? "border-rose-200" : "border-stone-200" },
+    {
+      label: comingSoonCount > 0 ? "কামিং সুন / স্টক সতর্কতা" : "কম স্টক সতর্কতা",
+      value: `${comingSoonCount > 0 ? `${comingSoonCount} কামিং সুন` : `${lowStockCount + outOfStockCount} টি কম স্টক`}`,
+      sub: `${lowStockCount + outOfStockCount} টি স্টক রিস্টক করুন`,
+      icon: Sparkles,
+      color: comingSoonCount > 0 ? "bg-amber-50 text-amber-800" : lowStockCount > 0 ? "bg-rose-50 text-rose-700" : "bg-stone-50 text-stone-500",
+      border: comingSoonCount > 0 ? "border-amber-300" : lowStockCount > 0 ? "border-rose-200" : "border-stone-200"
+    },
   ];
 
   // ─── Render
@@ -550,10 +795,17 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
                     </p>
                   </div>
 
-                  <label className="flex items-center gap-2 text-xs font-semibold text-stone-700 cursor-pointer">
-                    <input type="checkbox" name="isSeasonal" className="w-4 h-4 rounded accent-emerald-700" />
-                    সিজনাল পণ্য
-                  </label>
+                  <div className="flex flex-wrap items-center gap-3 pt-1">
+                    <label className="flex items-center gap-2 text-xs font-semibold text-stone-700 cursor-pointer">
+                      <input type="checkbox" name="isSeasonal" className="w-4 h-4 rounded accent-emerald-700" />
+                      সিজনাল পণ্য
+                    </label>
+                    <label className="flex items-center gap-1.5 text-xs font-bold text-amber-900 bg-amber-50 border border-amber-300 px-2.5 py-1 rounded-xl cursor-pointer shadow-sm">
+                      <input type="checkbox" name="isComingSoon" className="w-4 h-4 rounded accent-amber-600" />
+                      <Clock className="w-3.5 h-3.5 text-amber-600" />
+                      কামিং সুন (Coming Soon)
+                    </label>
+                  </div>
 
                   <button
                     disabled={isPending}
@@ -905,121 +1157,617 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
               </div>
             </div>
 
-            {/* ── Product Inventory with Inline Stock Edit ─────────────────── */}
+            {/* ── Product Inventory: Coming Soon, Price & Quantity Management ── */}
             <div className="bg-white rounded-2xl border border-stone-200/80 shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100 bg-stone-50/60">
-                <div className="flex items-center gap-2">
-                  <Layers className="w-4.5 h-4.5 text-emerald-800" />
-                  <h3 className="font-extrabold text-base text-emerald-950">পণ্য ও স্টক তালিকা</h3>
+              {/* Header */}
+              <div className="px-5 py-4 border-b border-stone-100 bg-stone-50/60">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Layers className="w-4.5 h-4.5 text-emerald-800" />
+                    <div>
+                      <h3 className="font-extrabold text-base text-emerald-950">পণ্য, মূল্য ও স্টক ম্যানেজমেন্ট</h3>
+                      <p className="text-[11px] text-stone-500 font-medium">কামিং সুন (আম/গুড়), দ্রুত মূল্য ও স্টক কোয়ান্টিটি আপডেট</p>
+                    </div>
+                  </div>
+
+                  {/* Product Search */}
+                  <div className="relative flex-1 min-w-[180px] max-w-xs">
+                    <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="পণ্য বা ক্যাটাগরি খুঁজুন..."
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                      className="w-full border border-stone-200 rounded-xl pl-8 pr-8 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600 bg-white"
+                    />
+                    {productSearch && (
+                      <button
+                        onClick={() => setProductSearch("")}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {lowStockCount > 0 && (
-                    <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 text-[11px] font-bold border border-rose-200 px-2 py-0.5 rounded-full">
-                      <AlertTriangle className="w-3 h-3" />
-                      {lowStockCount}টি কম স্টক
-                    </span>
-                  )}
-                  <span className="text-xs text-stone-400">মোট: {tenant.products.length}</span>
+
+                {/* Filter Tabs */}
+                <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-2 border-t border-stone-200/60">
+                  {[
+                    { id: "ALL", label: "সব পণ্য", count: products.length },
+                    { id: "IN_STOCK", label: "ইন-স্টক", count: inStockCount },
+                    { id: "LOW_STOCK", label: "কম স্টক", count: lowStockCount },
+                    { id: "OUT_OF_STOCK", label: "স্টক শেষ", count: outOfStockCount },
+                    { id: "COMING_SOON", label: "কামিং সুন", count: comingSoonCount },
+                  ].map((tab) => {
+                    const isActive = productFilter === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setProductFilter(tab.id as any)}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                          isActive
+                            ? "bg-emerald-800 text-white shadow-sm"
+                            : "bg-stone-100 hover:bg-stone-200 text-stone-600"
+                        }`}
+                      >
+                        <span>{tab.label}</span>
+                        <span
+                          className={`px-1.5 py-0.2 rounded-md text-[10px] font-black ${
+                            isActive
+                              ? "bg-emerald-950 text-emerald-200"
+                              : tab.id === "COMING_SOON" && tab.count > 0
+                              ? "bg-amber-200 text-amber-900"
+                              : "bg-stone-200 text-stone-700"
+                          }`}
+                        >
+                          {tab.count}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              <div className="divide-y divide-stone-100">
-                {tenant.products.map((p) => {
-                  const isEditing = editingProductId === p.id;
-                  const isLowStock = p.stock <= 5;
-                  return (
-                    <div key={p.id} className="px-4 py-3">
-                      <div className="flex items-center justify-between gap-3">
-                        {/* Product Info */}
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="w-11 h-11 rounded-xl overflow-hidden bg-stone-100 border border-stone-200 flex-shrink-0 flex items-center justify-center">
-                            {p.image ? (
-                              <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
-                            ) : (
-                              <span className="text-xl">{p.icon || "📦"}</span>
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <span className="font-bold text-stone-900 text-sm block truncate">{p.name}</span>
-                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                              <span className="text-xs text-stone-500">{p.unit}</span>
-                              <span className="text-[11px] font-bold text-amber-700">৳{p.price}</span>
-                              <span className={`text-[11px] font-bold ${isLowStock ? "text-rose-600" : "text-emerald-700"}`}>
-                                {isLowStock && <AlertTriangle className="w-3 h-3 inline mr-0.5" />}
-                                স্টক: {p.stock}
-                              </span>
+              {/* Product List */}
+              <div className="divide-y divide-stone-100 p-4 space-y-4">
+                {filteredProducts.length === 0 ? (
+                  <div className="text-center py-10 text-stone-400">
+                    <Package className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                    <p className="text-sm font-medium">কোনো পণ্য পাওয়া যায়নি!</p>
+                  </div>
+                ) : (
+                  filteredProducts.map((p) => {
+                    const isEditing = editingProductId === p.id;
+                    const isComingSoon = Boolean(p.isComingSoon);
+                    const isOutOfStock = !isComingSoon && p.stock <= 0;
+                    const isLowStock = !isComingSoon && !isOutOfStock && p.stock <= 5;
+                    const pVariants = parseProductVariants(p);
+
+                    return (
+                      <div
+                        key={p.id}
+                        className={`rounded-2xl border transition-all duration-200 ${
+                          isEditing
+                            ? "bg-emerald-50/40 border-emerald-300 shadow-md p-5"
+                            : "bg-stone-50/40 hover:bg-white border-stone-200 p-4 shadow-sm"
+                        }`}
+                      >
+                        {/* ── Normal View Header ── */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3 min-w-0 flex-1">
+                            {/* Product Image / Icon */}
+                            <div className="w-12 h-12 rounded-xl overflow-hidden bg-white border border-stone-200 flex-shrink-0 flex items-center justify-center shadow-sm">
+                              {p.image ? (
+                                <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="text-2xl">{p.icon || "📦"}</span>
+                              )}
+                            </div>
+
+                            {/* Titles & Badges */}
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="font-extrabold text-stone-900 text-base leading-tight">
+                                  {p.name}
+                                </h4>
+                                <span className="text-[11px] font-bold bg-stone-200/80 text-stone-700 px-2 py-0.5 rounded-md">
+                                  {p.category}
+                                </span>
+                                {p.isSeasonal && (
+                                  <span className="text-[11px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md">
+                                    🌿 সিজনাল
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Status Badges */}
+                              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                {isComingSoon ? (
+                                  <span className="inline-flex items-center gap-1 text-xs font-black bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded-full border border-amber-500 shadow-sm animate-pulse">
+                                    <Clock className="w-3.5 h-3.5 text-slate-950" />
+                                    ⏳ কামিং সুন (Coming Soon)
+                                  </span>
+                                ) : isOutOfStock ? (
+                                  <span className="inline-flex items-center gap-1 text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300 px-2.5 py-0.5 rounded-full">
+                                    <AlertTriangle className="w-3 h-3 text-rose-600" />
+                                    স্টক শেষ (০)
+                                  </span>
+                                ) : isLowStock ? (
+                                  <span className="inline-flex items-center gap-1 text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300 px-2.5 py-0.5 rounded-full">
+                                    <AlertTriangle className="w-3 h-3 text-amber-600" />
+                                    সীমিত স্টক ({p.stock} টি)
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-0.5 rounded-full">
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                    স্টকে আছে ({p.stock} টি)
+                                  </span>
+                                )}
+
+                                <span className="text-xs text-stone-500 font-medium">
+                                  ডিফল্ট: {p.unit}
+                                </span>
+                              </div>
                             </div>
                           </div>
+
+                          {/* Top-Right Action Buttons */}
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => (isEditing ? setEditingProductId(null) : startEditProduct(p))}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-sm ${
+                                isEditing
+                                  ? "bg-stone-200 text-stone-800 hover:bg-stone-300"
+                                  : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200"
+                              }`}
+                            >
+                              {isEditing ? (
+                                <>
+                                  <X className="w-3.5 h-3.5" />
+                                  <span>বন্ধ করুন</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Edit3 className="w-3.5 h-3.5 text-emerald-700" />
+                                  <span>এডিট ও মূল্য</span>
+                                </>
+                              )}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteProduct(p.id, p.name)}
+                              className="p-2 rounded-xl text-rose-500 hover:bg-rose-100/70 border border-rose-200 transition"
+                              title="পণ্য ডিলিট করুন"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => isEditing ? setEditingProductId(null) : startEditProduct(p)}
-                            className={`p-2 rounded-lg text-xs font-bold transition ${
-                              isEditing
-                                ? "bg-stone-100 text-stone-600 hover:bg-stone-200"
-                                : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                            }`}
-                          >
-                            {isEditing ? <X className="w-3.5 h-3.5" /> : <Edit3 className="w-3.5 h-3.5" />}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (confirm(`"${p.name}" মুছে ফেলতে নিশ্চিত?`)) {
-                                startTransition(async () => {
-                                  try {
-                                    await deleteProductAction(p.id, tenant.slug);
-                                    addToast("পণ্য মুছে ফেলা হয়েছে।");
-                                  } catch {
-                                    addToast("মুছতে ব্যর্থ হয়েছে!", "error");
+                        {/* ── Quick Controls Bar (Visible when not editing) ── */}
+                        {!isEditing && (
+                          <div className="mt-3.5 pt-3 border-t border-stone-200/70 space-y-3">
+                            {/* Feature 1: Coming Soon Toggle & Feature 2: Stock Bar */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {/* ── Feature 1: Coming Soon Toggle Button ── */}
+                              <div className="bg-white rounded-xl p-2.5 border border-stone-200/80 shadow-sm flex items-center justify-between gap-2">
+                                <div>
+                                  <span className="text-[11px] font-bold text-stone-500 block">কামিং সুন স্ট্যাটাস</span>
+                                  <span className="text-xs font-bold text-stone-800">
+                                    {isComingSoon ? "বর্তমানে কামিং সুন রয়েছে" : "বর্তমানে লাইভ / স্টকে রয়েছে"}
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleComingSoon(p.id, isComingSoon)}
+                                  disabled={isPending}
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all active:scale-95 shadow-sm disabled:opacity-50 ${
+                                    isComingSoon
+                                      ? "bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-700"
+                                      : "bg-amber-500 hover:bg-amber-600 text-emerald-950 border border-amber-600"
+                                  }`}
+                                  title={
+                                    isComingSoon
+                                      ? "পণ্যটি ইন-স্টক হিসেবে চালু করুন"
+                                      : "আম বা গুড়ের মতো মৌসুমের আগে কামিং সুন চালু করুন"
                                   }
-                                });
-                              }
-                            }}
-                            className="p-2 rounded-lg text-rose-500 hover:bg-rose-50 transition"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
+                                >
+                                  {isComingSoon ? (
+                                    <>
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                                      <span>🟢 ইন-স্টক করুন (লাইভ)</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Clock className="w-3.5 h-3.5 text-emerald-950 animate-pulse" />
+                                      <span>⏳ কামিং সুন (Coming Soon) করুন</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
 
-                      {/* Inline Edit Panel */}
-                      {isEditing && (
-                        <div className="mt-3 p-3 bg-emerald-50/60 rounded-xl border border-emerald-200/60 flex flex-wrap items-end gap-2">
-                          <div className="flex-1 min-w-[80px]">
-                            <label className="text-[10px] font-bold text-stone-500 block mb-0.5">স্টক আপডেট</label>
-                            <input
-                              type="number"
-                              value={editStock}
-                              onChange={(e) => setEditStock(e.target.value)}
-                              className="w-full border border-stone-200 rounded-lg px-2.5 py-1.5 text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-emerald-600 bg-white"
-                            />
+                              {/* ── Feature 2: Quantity (Stock) Add & Update ── */}
+                              <div className="bg-white rounded-xl p-2.5 border border-stone-200/80 shadow-sm flex flex-col justify-between gap-1.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] font-bold text-stone-500">মজুদ কোয়ান্টিটি / স্টক:</span>
+                                  <span className="text-xs font-black text-emerald-950 font-mono">
+                                    {p.stock} টি অবশিষ্ট
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {/* Stepper */}
+                                  <div className="flex items-center bg-stone-100 rounded-lg p-0.5 border border-stone-200">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleStockDelta(p.id, -1)}
+                                      disabled={isPending || p.stock <= 0}
+                                      className="w-7 h-6 flex items-center justify-center text-stone-700 hover:bg-white rounded font-black disabled:opacity-30"
+                                      title="১ টি কমান"
+                                    >
+                                      <Minus className="w-3 h-3" />
+                                    </button>
+                                    <input
+                                      type="number"
+                                      value={quickStockInputs[p.id] ?? p.stock}
+                                      onChange={(e) =>
+                                        setQuickStockInputs((prev) => ({ ...prev, [p.id]: e.target.value }))
+                                      }
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                          const val = Number(quickStockInputs[p.id]);
+                                          if (!isNaN(val)) handleSetStock(p.id, val);
+                                        }
+                                      }}
+                                      className="w-12 text-center text-xs font-black bg-transparent focus:bg-white focus:outline-none rounded"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleStockDelta(p.id, 1)}
+                                      disabled={isPending}
+                                      className="w-7 h-6 flex items-center justify-center text-stone-700 hover:bg-white rounded font-black disabled:opacity-30"
+                                      title="১ টি বাড়ান"
+                                    >
+                                      <Plus className="w-3 h-3" />
+                                    </button>
+                                  </div>
+
+                                  {/* If user typed custom stock, show Save button */}
+                                  {quickStockInputs[p.id] !== undefined &&
+                                    quickStockInputs[p.id] !== String(p.stock) && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSetStock(p.id, Number(quickStockInputs[p.id]) || 0)}
+                                        className="bg-emerald-700 text-white px-2 py-1 rounded-lg text-xs font-bold hover:bg-emerald-800 transition"
+                                      >
+                                        সেভ
+                                      </button>
+                                    )}
+
+                                  {/* Quick Add Presets */}
+                                  <div className="flex items-center gap-1">
+                                    {[5, 10, 20, 50].map((inc) => (
+                                      <button
+                                        key={inc}
+                                        type="button"
+                                        onClick={() => handleStockDelta(p.id, inc)}
+                                        disabled={isPending}
+                                        className="px-2 py-0.5 rounded-lg text-[11px] font-extrabold bg-stone-100 hover:bg-emerald-100 text-stone-700 hover:text-emerald-900 border border-stone-200 transition active:scale-95"
+                                        title={`স্টকে +${inc} যোগ করুন`}
+                                      >
+                                        +{inc}
+                                      </button>
+                                    ))}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSetStock(p.id, 0)}
+                                      disabled={isPending || p.stock === 0}
+                                      className="px-1.5 py-0.5 rounded-lg text-[10px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition"
+                                      title="স্টক ০ (আউট অব স্টক) করুন"
+                                    >
+                                      ০ শেষ
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* ── Feature 3: Pricing & Variants Overview ── */}
+                            <div className="bg-white rounded-xl p-2.5 border border-stone-200/80 shadow-sm flex flex-wrap items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-black text-amber-700 font-mono">
+                                  বেসিক মূল্য: ৳{p.price} / {p.unit}
+                                </span>
+                                <span className="text-stone-300">|</span>
+                                <span className="text-[11px] font-bold text-stone-500">সাইজ ভ্যারিয়েন্ট মূল্য:</span>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {pVariants.map((v, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="inline-flex items-center gap-1 bg-stone-100 text-stone-800 border border-stone-200 px-2 py-0.5 rounded-lg text-[11px] font-semibold"
+                                    >
+                                      <span>{v.unit}:</span>
+                                      <span className="font-bold text-emerald-800 font-mono">৳{v.price}</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => startEditProduct(p)}
+                                className="inline-flex items-center gap-1 text-emerald-800 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-lg text-xs font-bold transition border border-emerald-200"
+                              >
+                                <Tag className="w-3 h-3" />
+                                <span>মূল্য ও সাইজ এডিট করুন</span>
+                              </button>
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-[80px]">
-                            <label className="text-[10px] font-bold text-stone-500 block mb-0.5">মূল্য (৳)</label>
-                            <input
-                              type="number"
-                              value={editPrice}
-                              onChange={(e) => setEditPrice(e.target.value)}
-                              className="w-full border border-stone-200 rounded-lg px-2.5 py-1.5 text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-emerald-600 bg-white"
-                            />
+                        )}
+
+                        {/* ── Feature 3 & Detailed Edit Form Panel ── */}
+                        {isEditing && (
+                          <div className="mt-4 pt-4 border-t border-emerald-200/80 space-y-4">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-extrabold text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
+                                <Edit3 className="w-3.5 h-3.5 text-emerald-700" />
+                                বিস্তারিত তথ্য, মূল্য ও স্টক এডিটর
+                              </span>
+                              <span className="text-[11px] text-stone-500">
+                                পরিবর্তন করে নিচে &quot;সেভ করুন&quot; বাটনে ক্লিক করুন
+                              </span>
+                            </div>
+
+                            {/* Row 1: Name, Category, Default Unit */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div>
+                                <label className="text-[11px] font-bold text-stone-600 block mb-1">পণ্যের নাম *</label>
+                                <input
+                                  type="text"
+                                  value={editName}
+                                  onChange={(e) => setEditName(e.target.value)}
+                                  className="w-full border border-stone-200 rounded-xl px-3 py-1.5 text-xs bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[11px] font-bold text-stone-600 block mb-1">ক্যাটাগরি</label>
+                                <select
+                                  value={editCategory}
+                                  onChange={(e) => setEditCategory(e.target.value)}
+                                  className="w-full border border-stone-200 rounded-xl px-3 py-1.5 text-xs bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                                >
+                                  <option value="মধু">মধু</option>
+                                  <option value="আম">আম</option>
+                                  <option value="গুড়">গুড়</option>
+                                  <option value="অন্যান্য">অন্যান্য</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="text-[11px] font-bold text-stone-600 block mb-1">ডিফল্ট ইউনিট *</label>
+                                <input
+                                  type="text"
+                                  value={editUnit}
+                                  onChange={(e) => setEditUnit(e.target.value)}
+                                  placeholder="যেমন: ৫ কেজি, ১ লিটার"
+                                  className="w-full border border-stone-200 rounded-xl px-3 py-1.5 text-xs bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Row 2: Base Price, Stock & Quick Add */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {/* Price */}
+                              <div className="bg-white p-3 rounded-xl border border-stone-200">
+                                <label className="text-[11px] font-bold text-stone-600 block mb-1">
+                                  বেসিক মূল্য (৳) *
+                                </label>
+                                <input
+                                  type="number"
+                                  value={editBasePrice}
+                                  onChange={(e) => setEditBasePrice(e.target.value)}
+                                  className="w-full border border-stone-200 rounded-lg px-3 py-1.5 text-sm font-black text-amber-800 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                                />
+                                <span className="text-[10px] text-stone-400 mt-1 block">
+                                  স্টোরফ্রন্টে প্রথম যে সাইজটি ডিফল্ট থাকে তার মূল্য।
+                                </span>
+                              </div>
+
+                              {/* Stock */}
+                              <div className="bg-white p-3 rounded-xl border border-stone-200">
+                                <div className="flex items-center justify-between mb-1">
+                                  <label className="text-[11px] font-bold text-stone-600">স্টক পরিমাণ (সংখ্যা) *</label>
+                                  <span className="text-[11px] font-bold text-emerald-800 font-mono">
+                                    বর্তমান: {editStock} টি
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditStock((prev) => String(Math.max(0, (Number(prev) || 0) - 1)))}
+                                    className="w-8 h-8 rounded-lg bg-stone-100 hover:bg-stone-200 font-black text-stone-700 flex items-center justify-center"
+                                  >
+                                    -
+                                  </button>
+                                  <input
+                                    type="number"
+                                    value={editStock}
+                                    onChange={(e) => setEditStock(e.target.value)}
+                                    className="w-20 border border-stone-200 rounded-lg px-2 py-1.5 text-center text-sm font-black bg-stone-50 focus:bg-white focus:outline-none"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditStock((prev) => String((Number(prev) || 0) + 1))}
+                                    className="w-8 h-8 rounded-lg bg-stone-100 hover:bg-stone-200 font-black text-stone-700 flex items-center justify-center"
+                                  >
+                                    +
+                                  </button>
+
+                                  <div className="flex items-center gap-1 ml-auto">
+                                    {[5, 10, 20, 50].map((step) => (
+                                      <button
+                                        key={step}
+                                        type="button"
+                                        onClick={() => setEditStock((prev) => String((Number(prev) || 0) + step))}
+                                        className="px-2 py-1 rounded text-[11px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                      >
+                                        +{step}
+                                      </button>
+                                    ))}
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditStock("0")}
+                                      className="px-1.5 py-1 rounded text-[10px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200"
+                                    >
+                                      ০
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Row 3: Status Toggles (Coming Soon & Seasonal) */}
+                            <div className="bg-white p-3 rounded-xl border border-stone-200 flex flex-wrap items-center justify-between gap-3">
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={editIsComingSoon}
+                                  onChange={(e) => setEditIsComingSoon(e.target.checked)}
+                                  className="w-4 h-4 rounded accent-amber-600 cursor-pointer"
+                                />
+                                <div>
+                                  <span className="text-xs font-black text-amber-950 flex items-center gap-1">
+                                    <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                    কামিং সুন (Coming Soon) হিসেবে দেখান
+                                  </span>
+                                  <span className="text-[10px] text-stone-500 block">
+                                    আম ও গুড় এর মতো সিজনাল পণ্যের মৌসুমের আগে কামিং সুন অন রাখুন।
+                                  </span>
+                                </div>
+                              </label>
+
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={editIsSeasonal}
+                                  onChange={(e) => setEditIsSeasonal(e.target.checked)}
+                                  className="w-4 h-4 rounded accent-emerald-700 cursor-pointer"
+                                />
+                                <span className="text-xs font-bold text-stone-700">সিজনাল পণ্য</span>
+                              </label>
+                            </div>
+
+                            {/* Row 4: Size Variants & Pricing Builder */}
+                            <div className="bg-white p-3.5 rounded-xl border border-stone-200 space-y-2.5">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <label className="text-xs font-black text-emerald-950 flex items-center gap-1.5">
+                                    <Tag className="w-3.5 h-3.5 text-emerald-700" />
+                                    সাইজ ভ্যারিয়েন্ট ও মূল্য তালিকা
+                                  </label>
+                                  <span className="text-[10px] text-stone-500">
+                                    কাস্টমার ড্রপডাউন বা বাটনে এই সাইজ এবং নির্ধারিত মূল্য দেখতে পাবেন।
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={addEditVariantRow}
+                                  className="inline-flex items-center gap-1 text-emerald-800 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100 text-xs font-bold px-2.5 py-1 rounded-lg border border-emerald-200 transition"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                  <span>সাইজ যোগ করুন</span>
+                                </button>
+                              </div>
+
+                              <div className="space-y-1.5">
+                                {editVariants.map((v, idx) => (
+                                  <div key={idx} className="flex items-center gap-2">
+                                    <input
+                                      type="text"
+                                      value={v.unit}
+                                      onChange={(e) => updateEditVariantRow(idx, "unit", e.target.value)}
+                                      placeholder="যেমন: ৫ কেজি, ১০ কেজি, ১ লিটার"
+                                      className="flex-1 border border-stone-200 rounded-lg px-2.5 py-1.5 text-xs bg-stone-50 focus:bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                                    />
+                                    <div className="relative w-28">
+                                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-400">
+                                        ৳
+                                      </span>
+                                      <input
+                                        type="number"
+                                        value={v.price}
+                                        onChange={(e) => updateEditVariantRow(idx, "price", e.target.value)}
+                                        placeholder="মূল্য"
+                                        className="w-full border border-stone-200 rounded-lg pl-6 pr-2 py-1.5 text-xs font-bold text-amber-900 bg-stone-50 focus:bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none font-mono"
+                                      />
+                                    </div>
+                                    {editVariants.length > 1 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => removeEditVariantRow(idx)}
+                                        className="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 flex items-center justify-center transition"
+                                        title="এই সাইজটি মুছুন"
+                                      >
+                                        <Minus className="w-3 h-3" />
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Row 5: Image & Description */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div className="col-span-1">
+                                <label className="text-[11px] font-bold text-stone-600 block mb-1">ছবির পাথ</label>
+                                <input
+                                  type="text"
+                                  value={editImage}
+                                  onChange={(e) => setEditImage(e.target.value)}
+                                  placeholder="/products/mango.jpg"
+                                  className="w-full border border-stone-200 rounded-xl px-3 py-1.5 text-xs bg-white"
+                                />
+                              </div>
+                              <div className="col-span-2">
+                                <label className="text-[11px] font-bold text-stone-600 block mb-1">পণ্য বিবরণ</label>
+                                <input
+                                  type="text"
+                                  value={editDescription}
+                                  onChange={(e) => setEditDescription(e.target.value)}
+                                  placeholder="পণ্য সম্পর্কে বিস্তারিত লিখুন..."
+                                  className="w-full border border-stone-200 rounded-xl px-3 py-1.5 text-xs bg-white"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Action Buttons: Save & Cancel */}
+                            <div className="flex items-center justify-end gap-2 pt-2 border-t border-stone-200">
+                              <button
+                                type="button"
+                                onClick={() => setEditingProductId(null)}
+                                className="px-4 py-2 rounded-xl text-xs font-bold bg-stone-100 hover:bg-stone-200 text-stone-700 transition"
+                              >
+                                বাতিল
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isPending}
+                                onClick={() => saveProductEdit(p.id)}
+                                className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-extrabold bg-emerald-800 hover:bg-emerald-900 text-white shadow transition disabled:opacity-50"
+                              >
+                                <RefreshCw className={`w-3.5 h-3.5 ${isPending ? "animate-spin" : ""}`} />
+                                <span>{isPending ? "সেভ হচ্ছে..." : "💾 পরিবর্তন সেভ করুন"}</span>
+                              </button>
+                            </div>
                           </div>
-                          <button
-                            onClick={() => saveProductEdit(p.id)}
-                            disabled={isPending}
-                            className="flex-1 min-w-[80px] bg-emerald-800 hover:bg-emerald-900 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition disabled:opacity-50 flex items-center justify-center gap-1"
-                          >
-                            <RefreshCw className="w-3 h-3" />
-                            সেভ করুন
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                        )}
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
 

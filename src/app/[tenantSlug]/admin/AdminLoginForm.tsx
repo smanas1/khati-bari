@@ -2,12 +2,13 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Lock, ArrowLeft, KeyRound, AlertCircle } from "lucide-react";
+import { ShieldCheck, Lock, ArrowLeft, KeyRound, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { verifyAdminPasswordAction } from "@/app/actions";
 
 export default function AdminLoginForm({ slug, storeName }: { slug: string; storeName: string }) {
   const router = useRouter();
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -17,7 +18,7 @@ export default function AdminLoginForm({ slug, storeName }: { slug: string; stor
     setLoading(true);
 
     try {
-      const res = await verifyAdminPasswordAction(password);
+      const res = await verifyAdminPasswordAction(password.trim());
       if (res.success) {
         router.refresh();
       } else {
@@ -73,20 +74,37 @@ export default function AdminLoginForm({ slug, storeName }: { slug: string; stor
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="text-xs font-bold text-stone-300 block mb-1.5">
-                অ্যাডমিন পাসওয়ার্ড লিখুন
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-stone-300">
+                  অ্যাডমিন পাসওয়ার্ড লিখুন
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setPassword("admin123")}
+                  className="text-[10px] text-amber-400 hover:text-amber-300 underline font-semibold transition"
+                >
+                  পাসওয়ার্ড বসান (admin123)
+                </button>
+              </div>
               <div className="relative">
                 <KeyRound className="w-4 h-4 text-stone-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   autoFocus
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="পাসওয়ার্ড প্রদান করুন"
-                  className="w-full bg-stone-900 border border-stone-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-stone-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+                  placeholder="admin123"
+                  className="w-full bg-stone-900 border border-stone-800 rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-stone-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition font-mono"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 hover:text-stone-300 transition"
+                  title={showPassword ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখুন"}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 

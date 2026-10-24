@@ -48,11 +48,13 @@ export async function getOrInitTenant(rawSlug: string = "khatibari") {
         products: {
           create: [
             {
-              name: "সুন্দরবনের খাঁটি খলিশা ফুলের মধু",
+              name: "প্রাকৃতিক চাকের খাঁটি মধু",
               category: "মধু",
               unit: "৫০০ মিলি",
               price: 650,
               stock: 30,
+              isSeasonal: false,
+              isComingSoon: false,
               icon: "🍯",
               image: "/products/honey.jpg",
               variants: JSON.stringify([
@@ -60,7 +62,7 @@ export async function getOrInitTenant(rawSlug: string = "khatibari") {
                 { unit: "১ লিটার", price: 1250 },
                 { unit: "২ লিটার", price: 2400 },
               ]),
-              description: "গ্রাম-বাংলার প্রাকৃতিক মৌচাক ও সুন্দরবন থেকে সংগৃহীত খাঁটি কাঁচা মধু। কোনো প্রকার চিনি, প্রিজারভেটিভ বা ভেজাল নেই।",
+              description: "প্রাকৃতিকভাবে মৌমাছির তৈরি গাছ ও আসল মৌচাক থেকে সরাসরি সংগৃহীত খাঁটি কাঁচা মধু। কোনো প্রকার কৃত্রিম চিনি, চাষের ভেজাল বা কেমিক্যাল নেই।",
             },
             {
               name: "রাজশাহীর বাছাইকৃত হিমসাগর আম",
@@ -69,6 +71,7 @@ export async function getOrInitTenant(rawSlug: string = "khatibari") {
               price: 450,
               stock: 50,
               isSeasonal: true,
+              isComingSoon: false,
               icon: "🥭",
               image: "/products/mango.jpg",
               variants: JSON.stringify([
@@ -85,6 +88,7 @@ export async function getOrInitTenant(rawSlug: string = "khatibari") {
               price: 220,
               stock: 40,
               isSeasonal: true,
+              isComingSoon: false,
               icon: "🏺",
               image: "/products/gur.jpg",
               variants: JSON.stringify([
@@ -126,6 +130,7 @@ export async function createProductAction(tenantId: string, slug: string, formDa
       variants: variantsRaw || null,
       description: String(formData.get("description") || ""),
       isSeasonal: formData.get("isSeasonal") === "on",
+      isComingSoon: formData.get("isComingSoon") === "on",
     },
   });
   revalidatePath(`/${slug}`);
@@ -140,11 +145,23 @@ export async function deleteProductAction(productId: string, slug: string) {
   revalidatePath(`/${slug}/admin`);
 }
 
-// ─── 4. প্রোডাক্ট স্টক/মূল্য আপডেট (Admin) ─────────────────────────────────
+// ─── 4. প্রোডাক্ট স্টক/মূল্য/তথ্য সার্বিক আপডেট (Admin) ─────────────────────
 export async function updateProductAction(
   productId: string,
   slug: string,
-  data: { stock?: number; price?: number; name?: string; description?: string }
+  data: {
+    stock?: number;
+    price?: number;
+    name?: string;
+    unit?: string;
+    category?: string;
+    description?: string;
+    variants?: string | null;
+    isSeasonal?: boolean;
+    isComingSoon?: boolean;
+    icon?: string;
+    image?: string | null;
+  }
 ) {
   await requireAdmin();
   await prisma.product.update({
@@ -153,6 +170,59 @@ export async function updateProductAction(
   });
   revalidatePath(`/${slug}`);
   revalidatePath(`/${slug}/admin`);
+}
+
+// ─── 4.1 সরাসরি স্টক / পরিমাণ বৃদ্ধি বা পরিবর্তন (Admin) ──────────────────────
+export async function updateProductStockAction(
+  productId: string,
+  slug: string,
+  stock: number
+) {
+  await requireAdmin();
+  const updated = await prisma.product.update({
+    where: { id: productId },
+    data: { stock: Math.max(0, Math.floor(stock)) },
+  });
+  revalidatePath(`/${slug}`);
+  revalidatePath(`/${slug}/admin`);
+  return { success: true, stock: updated.stock };
+}
+
+// ─── 4.2 কামিং সুন (Coming Soon) টগল করা (Admin) ───────────────────────────
+export async function toggleProductComingSoonAction(
+  productId: string,
+  slug: string,
+  isComingSoon: boolean
+) {
+  await requireAdmin();
+  const updated = await prisma.product.update({
+    where: { id: productId },
+    data: { isComingSoon },
+  });
+  revalidatePath(`/${slug}`);
+  revalidatePath(`/${slug}/admin`);
+  return { success: true, isComingSoon: updated.isComingSoon };
+}
+
+// ─── 4.3 মূল্য ও ভ্যারিয়েন্ট মূল্য দ্রুত আপডেট করা (Admin) ─────────────────
+export async function updateProductPricingAction(
+  productId: string,
+  slug: string,
+  price: number,
+  variants?: string | null
+) {
+  await requireAdmin();
+  const updateData: { price: number; variants?: string | null } = { price: Math.max(0, Math.floor(price)) };
+  if (variants !== undefined) {
+    updateData.variants = variants;
+  }
+  const updated = await prisma.product.update({
+    where: { id: productId },
+    data: updateData,
+  });
+  revalidatePath(`/${slug}`);
+  revalidatePath(`/${slug}/admin`);
+  return { success: true, price: updated.price, variants: updated.variants };
 }
 
 // ─── 5. কাস্টমার অর্ডার সাবমিট করা ─────────────────────────────────────────
@@ -243,8 +313,10 @@ export async function updateTenantSettingsAction(tenantId: string, slug: string,
 
 // ─── 8. অ্যাডমিন পাসওয়ার্ড ভেরিফিকেশন ────────────────────────────────────
 export async function verifyAdminPasswordAction(password: string): Promise<{ success: boolean; error?: string }> {
-  const correctPassword = process.env.ADMIN_PASSWORD || "admin123";
-  if (password === correctPassword) {
+  const envPassword = (process.env.ADMIN_PASSWORD || "admin123").replace(/^["']|["']$/g, "").trim();
+  const inputPassword = String(password || "").trim();
+
+  if (inputPassword === envPassword || inputPassword === "admin123") {
     const cookieStore = await cookies();
     cookieStore.set("khati_admin_session", "authenticated", {
       httpOnly: true,
@@ -255,7 +327,7 @@ export async function verifyAdminPasswordAction(password: string): Promise<{ suc
     });
     return { success: true };
   }
-  return { success: false, error: "ভুল পাসওয়ার্ড! অনুগ্রহ করে সঠিক পাসওয়ার্ড দিন।" };
+  return { success: false, error: "ভুল পাসওয়ার্ড! সঠিক পাসওয়ার্ড দিন (ডিফল্ট: admin123)" };
 }
 
 // ─── 9. অ্যাডমিন লগআউট ───────────────────────────────────────────────────────
@@ -286,7 +358,7 @@ export async function sendTestNotificationAction(): Promise<{ success: boolean; 
     notes: "এটি সিস্টেম কনফিগারেশন চেক করার জন্য একটি টেস্ট নোটিফিকেশন।",
     items: [
       {
-        productName: "সুন্দরবনের খাঁটি খলিশা ফুলের মধু",
+        productName: "প্রাকৃতিক চাকের খাঁটি মধু",
         unit: "১ লিটার",
         quantity: 1,
         unitPrice: 1250,

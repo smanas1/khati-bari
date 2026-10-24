@@ -34,6 +34,7 @@ model Product {
   price       Int
   stock       Int         @default(20)
   isSeasonal  Boolean     @default(false)
+  isComingSoon Boolean    @default(false)
   icon        String      @default("🍯")
   image       String?
   variants    String?

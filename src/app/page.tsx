@@ -9,7 +9,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://khatibari.smanas.net";
   const title = "খাঁটি বাড়ি — প্রাকৃতিক মধু, রাজশাহীর আম ও খাঁটি গুড়ের বিশ্বস্ত প্রতিষ্ঠান";
   const description =
-    "গ্রাম-বাংলার প্রাকৃতিক মৌচাক ও সুন্দরবনের খাঁটি প্রাকৃতিক মধু, রাজশাহীর মিষ্টি আম ও খাঁটি খেজুরের গুড় কিনুন সরাসরি মৌয়াল ও বাগান থেকে। সারাদেশে ক্যাশ অন ডেলিভারি।";
+    "গ্রাম-বাংলার প্রাকৃতিক মৌচাক থেকে সংগৃহীত খাঁটি চাকের মধু, রাজশাহীর মিষ্টি আম ও খাঁটি খেজুরের গুড় কিনুন সরাসরি মৌয়াল ও বাগান থেকে। সারাদেশে ক্যাশ অন ডেলিভারি।";
 
   return {
     title,
@@ -17,13 +17,11 @@ export async function generateMetadata(): Promise<Metadata> {
     keywords: [
       "খাঁটি মধু",
       "প্রাকৃতিক মধু",
+      "প্রাকৃতিক চাকের মধু",
+      "চাকের খাঁটি মধু",
       "raw honey bangladesh",
       "pure honey bangladesh",
       "গ্রামের খাঁটি মধু",
-      "সুন্দরবনের মধু",
-      "সরিষা ফুলের মধু",
-      "লিচু ফুলের মধু",
-      "কালোজিরা মধু",
       "চাক ভাঙা মধু",
       "রাজশাহীর আম",
       "rajshahi mango online",

@@ -54,6 +54,7 @@ interface TenantProduct {
   price: number;
   stock: number;
   isSeasonal: boolean;
+  isComingSoon?: boolean;
   icon: string;
   image?: string | null;
   variants?: string | null;
@@ -372,6 +373,10 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
     qtyToAdd: number = 1,
     openDrawer: boolean = false
   ) {
+    if (product.isComingSoon) {
+      addToast("info", `"${product.name}" কামিং সুন (শীঘ্রই আসছে)! অগ্রিম বুকিং করতে WhatsApp বাটনে ক্লিক করুন।`);
+      return;
+    }
     if (product.stock <= 0) {
       addToast("error", `দুঃখিত, "${product.name}" বর্তমানে স্টক আউট!`);
       return;
@@ -433,6 +438,10 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
     variant?: ProductVariant,
     qtyToAdd: number = 1
   ) {
+    if (product.isComingSoon) {
+      addToast("info", `"${product.name}" কামিং সুন (শীঘ্রই আসছে)! অগ্রিম বুকিং করতে WhatsApp বাটনে ক্লিক করুন।`);
+      return;
+    }
     if (product.stock <= 0) {
       addToast("error", `দুঃখিত, "${product.name}" বর্তমানে স্টক আউট!`);
       return;
@@ -1061,15 +1070,20 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
               const activeVariant = selectedVariants[p.id] || getDefaultVariant(p, productVariants);
               const cardQty = cardQuantities[p.id] || 1;
               const isWishlisted = !!wishlist[p.id];
-              const isOutOfStock = p.stock <= 0;
-              const isLowStock = !isOutOfStock && p.stock <= 5;
+              const isComingSoon = Boolean(p.isComingSoon);
+              const isOutOfStock = !isComingSoon && p.stock <= 0;
+              const isLowStock = !isComingSoon && !isOutOfStock && p.stock <= 5;
               const isExpanded = !!expandedDesc[p.id];
 
               return (
                 <div
                   key={p.id}
                   className={`bg-white rounded-3xl p-4 sm:p-5 border shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1 ${
-                    isOutOfStock ? "border-stone-300/80 opacity-90" : "border-stone-200/80"
+                    isComingSoon
+                      ? "border-amber-300/80 ring-1 ring-amber-400/20 bg-gradient-to-b from-amber-50/20 to-white"
+                      : isOutOfStock
+                      ? "border-stone-300/80 opacity-90"
+                      : "border-stone-200/80"
                   }`}
                 >
                   <div>
@@ -1093,7 +1107,12 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
 
                       {/* Top-Left Category / Status Badge */}
                       <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
-                        {isOutOfStock ? (
+                        {isComingSoon ? (
+                          <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 text-[11px] font-black px-2.5 py-1 rounded-full shadow-md flex items-center gap-1.5 border border-amber-300/50">
+                            <Clock className="w-3.5 h-3.5 text-slate-950 animate-pulse" />
+                            শীঘ্রই আসছে
+                          </span>
+                        ) : isOutOfStock ? (
                           <span className="bg-rose-600/95 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
                             <AlertCircle className="w-3 h-3" />
                             স্টক শেষ
@@ -1224,7 +1243,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                         </div>
 
                         {/* If Qty > 1, show multiplied total */}
-                        {cardQty > 1 && !isOutOfStock && (
+                        {cardQty > 1 && !isOutOfStock && !isComingSoon && (
                           <div className="text-[11px] font-bold text-amber-800">
                             মোট: ৳{activeVariant.price * cardQty} ({cardQty} টি)
                           </div>
@@ -1232,7 +1251,12 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
 
                         {/* Accurate Stock Status */}
                         <div className="flex items-center gap-1.5 text-[11px] font-semibold mt-1">
-                          {isOutOfStock ? (
+                          {isComingSoon ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-100/90 border border-amber-300 px-2 py-0.5 rounded-md">
+                              <Sparkles className="w-3 h-3 text-amber-600 animate-spin" />
+                              কামিং সুন (শীঘ্রই আসছে)
+                            </span>
+                          ) : isOutOfStock ? (
                             <>
                               <span className="w-2 h-2 rounded-full bg-rose-500" />
                               <span className="text-rose-600">স্টক শেষ (Out of Stock)</span>
@@ -1253,8 +1277,8 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                         </div>
                       </div>
 
-                      {/* Quantity Stepper (hidden if out of stock) */}
-                      {!isOutOfStock && (
+                      {/* Quantity Stepper (hidden if out of stock or coming soon) */}
+                      {!isOutOfStock && !isComingSoon && (
                         <div className="flex items-center bg-stone-100 rounded-xl p-0.5 border border-stone-200/70">
                           <button
                             type="button"
@@ -1282,24 +1306,30 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                       {/* WhatsApp Order Button */}
                       <a
                         href={
-                          isOutOfStock
+                          isComingSoon
+                            ? `https://wa.me/${tenant.whatsapp}?text=${encodeURIComponent(
+                                `আসসালামু আলাইকুম, আমি "${p.name} (${activeVariant.unit})" আসার পর অগ্রিম বুকিং / কিনতে আগ্রহী। পণ্যটি কবে নাগাদ স্টকে পাওয়া যাবে?`
+                              )}`
+                            : isOutOfStock
                             ? "#"
                             : `https://wa.me/${tenant.whatsapp}?text=${encodeURIComponent(
                                 `আসসালামু আলাইকুম, আমি "${p.name} (${activeVariant.unit}) x ${cardQty} = ৳${activeVariant.price * cardQty}" অর্ডার করতে চাচ্ছি।`
                               )}`
                         }
-                        target={isOutOfStock ? "_self" : "_blank"}
+                        target={isOutOfStock && !isComingSoon ? "_self" : "_blank"}
                         rel="noreferrer"
-                        title={isOutOfStock ? "পণ্যটি স্টকে নেই" : "WhatsApp-এ অর্ডার"}
-                        aria-label="WhatsApp-এ অর্ডার"
+                        title={isComingSoon ? "WhatsApp-এ অগ্রিম বুকিং" : isOutOfStock ? "পণ্যটি স্টকে নেই" : "WhatsApp-এ অর্ডার"}
+                        aria-label={isComingSoon ? "WhatsApp-এ অগ্রিম বুকিং" : "WhatsApp-এ অর্ডার"}
                         onClick={(e) => {
-                          if (isOutOfStock) {
+                          if (isOutOfStock && !isComingSoon) {
                             e.preventDefault();
                             addToast("error", `দুঃখিত, "${p.name}" বর্তমানে স্টক শেষ!`);
                           }
                         }}
                         className={`p-3 rounded-xl border transition flex items-center justify-center shadow-sm active:scale-95 ${
-                          isOutOfStock
+                          isComingSoon
+                            ? "border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900"
+                            : isOutOfStock
                             ? "border-stone-200 bg-stone-100 text-stone-400 cursor-not-allowed"
                             : "border-stone-200 hover:bg-stone-100 text-emerald-700 bg-white"
                         }`}
@@ -1311,11 +1341,11 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                       <button
                         type="button"
                         onClick={() => addToCart(p, activeVariant, cardQty, false)}
-                        disabled={isOutOfStock}
-                        title={isOutOfStock ? "স্টক শেষ" : "কার্টে যোগ করুন"}
+                        disabled={isOutOfStock || isComingSoon}
+                        title={isComingSoon ? "শীঘ্রই আসছে" : isOutOfStock ? "স্টক শেষ" : "কার্টে যোগ করুন"}
                         aria-label="কার্টে যোগ করুন"
                         className={`p-3 rounded-xl border font-bold transition flex items-center justify-center shadow-sm active:scale-95 ${
-                          isOutOfStock
+                          isComingSoon || isOutOfStock
                             ? "border-stone-200 bg-stone-100 text-stone-400 cursor-not-allowed"
                             : addedItemKey === `${p.id}_${activeVariant.unit}`
                             ? "border-amber-400 bg-amber-100 text-emerald-950 scale-105"
@@ -1329,30 +1359,44 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                         )}
                       </button>
 
-                      {/* Large Primary "Order Now" Button */}
-                      <button
-                        type="button"
-                        onClick={() => handleDirectOrder(p, activeVariant, cardQty)}
-                        disabled={isOutOfStock}
-                        aria-label="অর্ডার করুন"
-                        className={`flex-1 py-3 px-4 rounded-xl font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 ${
-                          isOutOfStock
-                            ? "bg-stone-200 text-stone-500 cursor-not-allowed"
-                            : "bg-emerald-800 hover:bg-emerald-900 text-white shadow-emerald-950/20 hover:shadow-lg hover:scale-[1.01]"
-                        }`}
-                      >
-                        {isOutOfStock ? (
-                          <>
-                            <AlertCircle className="w-4 h-4 text-stone-400" />
-                            <span>স্টক শেষ</span>
-                          </>
-                        ) : (
-                          <>
-                            <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300" />
-                            <span>অর্ডার করুন (১ ক্লিকে)</span>
-                          </>
-                        )}
-                      </button>
+                      {/* Large Primary "Order Now" Button / Pre-Order button */}
+                      {isComingSoon ? (
+                        <a
+                          href={`https://wa.me/${tenant.whatsapp}?text=${encodeURIComponent(
+                            `আসসালামু আলাইকুম, আমি "${p.name} (${activeVariant.unit})" আসার পর অগ্রিম বুকিং / প্রি-অর্ডার করতে চাই। পণ্যটি কবে নাগাদ স্টকে আসবে?`
+                          )}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex-1 py-3 px-4 rounded-xl font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-emerald-950 shadow-amber-500/20 hover:shadow-lg hover:scale-[1.01]"
+                        >
+                          <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-950" />
+                          <span>শীঘ্রই আসছে — অগ্রিম বুকিং</span>
+                        </a>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleDirectOrder(p, activeVariant, cardQty)}
+                          disabled={isOutOfStock}
+                          aria-label="অর্ডার করুন"
+                          className={`flex-1 py-3 px-4 rounded-xl font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 ${
+                            isOutOfStock
+                              ? "bg-stone-200 text-stone-500 cursor-not-allowed"
+                              : "bg-emerald-800 hover:bg-emerald-900 text-white shadow-emerald-950/20 hover:shadow-lg hover:scale-[1.01]"
+                          }`}
+                        >
+                          {isOutOfStock ? (
+                            <>
+                              <AlertCircle className="w-4 h-4 text-stone-400" />
+                              <span>স্টক শেষ</span>
+                            </>
+                          ) : (
+                            <>
+                              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300" />
+                              <span>অর্ডার করুন (১ ক্লিকে)</span>
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1399,8 +1443,9 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
               },
               knowsAbout: [
                 "খাঁটি প্রাকৃতিক মধু (Pure Natural Honey)",
+                "প্রাকৃতিক চাকের খাঁটি মধু",
                 "গ্রাম-বাংলার প্রাকৃতিক মৌচাক",
-                "সুন্দরবনের মধু",
+                "গাছ থেকে সংগৃহীত চাকের মধু",
                 "সরিষা ফুলের মধু",
                 "লিচু ফুলের মধু",
                 "কালোজিরা মধু",
@@ -1482,7 +1527,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                   name: "খাঁটি মধু (Pure Honey) কীভাবে চিনবেন এবং কেন খাঁটি বাড়ি (khatibari.smanas.net)-এর মধু সেরা?",
                   acceptedAnswer: {
                     "@type": "Answer",
-                    text: "খাঁটি মধু পানিতে দিলে সহজে দ্রবীভূত না হয়ে নিচে গিয়ে জমাট বাঁধে। খাঁটি বাড়ি (khatibari.smanas.net) গ্রাম-বাংলার প্রাকৃতিক মৌচাক, নির্ভরযোগ্য মৌয়াল ও সুন্দরবনের সেরা খাঁটি চাক থেকে শতভাগ কাঁচা, অপরিশোধিত ও চিনি ছাড়া প্রাকৃতিক মধু ল্যাব-পরীক্ষিত নিশ্চয়তাসহ ক্যাশ অন ডেলিভারিতে সরবরাহ করে।",
+                    text: "খাঁটি মধু পানিতে দিলে সহজে দ্রবীভূত না হয়ে নিচে গিয়ে জমাট বাঁধে। খাঁটি বাড়ি কোনো কৃত্রিম বা চাষের মধু দেয় না, বরং প্রাকৃতিকভাবে মৌমাছিদের তৈরি গ্রাম-বাংলার আসল বুনো মৌচাক থেকে সরাসরি কাঁচা, অপরিশোধিত ও চিনি ছাড়া প্রাকৃতিক চাকের মধু ক্যাশ অন ডেলিভারিতে সরবরাহ করে।",
                   },
                 },
                 {
@@ -1545,10 +1590,10 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
                 🍯
               </div>
               <h3 className="font-extrabold text-base text-stone-900 mb-2">
-                খাঁটি প্রাকৃতিক মধু (Pure Natural Honey)
+                প্রাকৃতিক চাকের খাঁটি মধু (Pure Wild Bee Honey)
               </h3>
               <p className="text-xs text-stone-600 leading-relaxed">
-                গ্রাম-বাংলার প্রাকৃতিক মৌচাক, নির্ভরযোগ্য মৌয়াল ও সুন্দরবনের সেরা প্রাকৃতিক মধু (সরিষা, খলিশা, লিচু ও কালোজিরা ফুল)। কোনো প্রকার হিটিং প্রসেসিং বা কৃত্রিম চিনি ছাড়া সম্পূর্ণ কাঁচা (Raw) ও পুষ্টিকর মধু যা রোগ প্রতিরোধ ক্ষমতা বাড়ায়।
+                প্রাকৃতিকভাবে মৌমাছির তৈরি গাছ ও আসল মৌচাক থেকে বিশ্বস্ত মৌয়ালদের সহায়তায় সংগৃহীত খাঁটি চাকের মধু। কোনো প্রকার চাষের ভেজাল, হিটিং প্রসেসিং বা কৃত্রিম চিনি ছাড়া সম্পূর্ণ কাঁচা (Raw) ও পুষ্টিকর মধু যা রোগ প্রতিরোধ ক্ষমতা বাড়ায়।
               </p>
             </div>
 
@@ -1588,7 +1633,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
               {[
                 {
                   q: "খাঁটি মধু চেনার উপায় কি এবং খাঁটি বাড়ি-এর মধু কোথা থেকে সংগ্রহ করা হয়?",
-                  a: "খাঁটি মধু পানিতে দিলে সঙ্গে সঙ্গে গলে যায় না, বরং সুতার মতো নিচে গিয়ে জমাট বাঁধে। খাঁটি বাড়ি (khatibari.smanas.net) শুধু সুন্দরবন নয়, সুন্দরবনের পাশাপাশি গ্রাম-বাংলার বিভিন্ন অঞ্চলের বিশ্বস্ত মৌয়াল ও প্রাকৃতিক মৌচাক থেকে শতভাগ কাঁচা ও অপরিশোধিত মধু সংগ্রহ করে, যাতে কোনো ধরনের কৃত্রিম মিষ্টি, হিটিং বা প্রিজারভেটিভ থাকে না।",
+                  a: "খাঁটি মধু পানিতে দিলে সঙ্গে সঙ্গে গলে যায় না, বরং সুতার মতো নিচে গিয়ে জমাট বাঁধে। খাঁটি বাড়ি কোনো কৃত্রিম বা চাষের মধু দেয় না; প্রাকৃতিকভাবে বুনো মৌমাছিদের তৈরি গ্রাম-বাংলার আসল প্রাকৃতিক মৌচাক থেকে বিশ্বস্ত মৌয়ালদের সহায়তায় খাঁটি ও অপরিশোধিত চাকের মধু সংগ্রহ করে, যাতে কোনো ধরনের কৃত্রিম মিষ্টি, হিটিং বা প্রিজারভেটিভ থাকে না।",
                 },
                 {
                   q: "রাজশাহীর আম কীভাবে অক্ষত ও ফরমালিনমুক্ত ডেলিভারি করা হয়?",
