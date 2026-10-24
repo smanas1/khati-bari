@@ -129,6 +129,18 @@ interface ToastMessage {
   message: string;
 }
 
+interface CompletedOrderData {
+  orderNumber: string;
+  customerName: string;
+  customerPhone: string;
+  totalAmount: number;
+  deliveryCharge: number;
+  deliveryArea: string;
+  courier: string;
+  whatsappUrl: string;
+}
+
+
 export function parseVariants(p: TenantProduct): ProductVariant[] {
   if (p.variants) {
     try {
@@ -198,6 +210,7 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
   const [addedItemKey, setAddedItemKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [orderSuccessMsg, setOrderSuccessMsg] = useState<string | null>(null);
+  const [completedOrder, setCompletedOrder] = useState<CompletedOrderData | null>(null);
   const [expandedDesc, setExpandedDesc] = useState<Record<string, boolean>>({});
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -566,24 +579,87 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
         .filter(Boolean)
         .join("\n");
 
+      const courierInfo = `${COURIER_SERVICES[selectedCourier].banglaName} (${COURIER_SERVICES[selectedCourier].shortDeliveryType})`;
       const deliveryAreaLabel = `${DELIVERY_AREAS[deliveryArea].name} - ${COURIER_SERVICES[selectedCourier].banglaName}`;
+
+      // Snapshot order info before clearing cart
+      const itemsSnapshot = [...cart];
+      const currentGrandTotal = grandTotal;
+      const currentDeliveryCharge = deliveryCharge;
+      const currentDeliveryAreaName = DELIVERY_AREAS[deliveryArea].name;
+      const currentCustomerName = custName.trim();
+      const currentAddress = custAddress.trim();
+      const currentNote = custNote.trim();
 
       const res = await placeOrderAction({
         tenantId: tenant.id,
         slug: tenant.slug,
-        customerName: custName.trim(),
+        customerName: currentCustomerName,
         customerPhone: cleanPhone,
         shippingAddress: fullShippingAddress,
         deliveryArea: deliveryAreaLabel,
         deliveryCharge,
         paymentMethod,
-        items: cart.map((c) => ({
+        items: itemsSnapshot.map((c) => ({
           productId: c.productId,
           productName: c.name,
           unit: c.unit,
           quantity: c.qty,
           unitPrice: c.price,
         })),
+      });
+
+      // Prepare WhatsApp redirect for Admin WhatsApp
+      let cleanWpNumber = (tenant.whatsapp || "").replace(/\D/g, "");
+      if (cleanWpNumber.startsWith("01") && cleanWpNumber.length === 11) {
+        cleanWpNumber = "88" + cleanWpNumber;
+      }
+
+      const itemsListText = itemsSnapshot
+        .map((item) => `▫️ *${item.name}* (${item.unit}) × ${item.qty} = ৳${item.price * item.qty}`)
+        .join("\n");
+
+      const noteText = currentNote ? `\n📝 *বিশেষ নোট:* ${currentNote}` : "";
+
+      const wpMessage = `🔔 *নতুন অর্ডার কনফার্মেশন (#${res.orderNumber})*
+━━━━━━━━━━━━━━━━━━
+আসসালামু আলাইকুম *${tenant.name}*, আমি ওয়েবসাইট থেকে একটি অর্ডার সম্পন্ন করেছি।
+
+📋 *অর্ডার নম্বর:* #${res.orderNumber}
+👤 *নাম:* ${currentCustomerName}
+📞 *মোবাইল:* ${cleanPhone}
+📍 *ঠিকানা:* ${currentAddress}
+🚚 *গন্তব্য:* ${currentDeliveryAreaName}
+📦 *কুরিয়ার:* ${courierInfo}
+💳 *পেমেন্ট:* ${paymentMethod}
+
+🛒 *অর্ডারকৃত পণ্যসমূহ:*
+${itemsListText}
+
+━━━━━━━━━━━━━━━━━━
+💰 *ডেলিভারি চার্জ:* ৳${currentDeliveryCharge}
+💵 *সর্বমোট প্রদেয় বিল:* *৳${currentGrandTotal}*${noteText}
+━━━━━━━━━━━━━━━━━━
+অনুগ্রহ করে অর্ডারটি দ্রুত প্রসেস করে কনফার্ম করুন। ধন্যবাদ!`;
+
+      const wpUrl = `https://wa.me/${cleanWpNumber}?text=${encodeURIComponent(wpMessage)}`;
+
+      // Attempt immediate redirection to WhatsApp
+      try {
+        window.open(wpUrl, "_blank");
+      } catch (e) {
+        console.warn("Popup blocked by browser", e);
+      }
+
+      setCompletedOrder({
+        orderNumber: res.orderNumber,
+        customerName: currentCustomerName,
+        customerPhone: cleanPhone,
+        totalAmount: currentGrandTotal,
+        deliveryCharge: currentDeliveryCharge,
+        deliveryArea: currentDeliveryAreaName,
+        courier: courierInfo,
+        whatsappUrl: wpUrl,
       });
 
       setCart([]);
@@ -598,9 +674,9 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
         localStorage.setItem(
           `khati_customer_info`,
           JSON.stringify({
-            name: custName.trim(),
+            name: currentCustomerName,
             phone: cleanPhone,
-            address: custAddress.trim(),
+            address: currentAddress,
             deliveryArea,
           })
         );
@@ -627,15 +703,37 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
       addToast("info", "সহজ ডেলিভারির জন্য নাম, ফোন ও ঠিকানা পূরণ করার পরামর্শ দেওয়া হলো।");
     }
 
+    let cleanWpNumber = (tenant.whatsapp || "").replace(/\D/g, "");
+    if (cleanWpNumber.startsWith("01") && cleanWpNumber.length === 11) {
+      cleanWpNumber = "88" + cleanWpNumber;
+    }
+
     const lines = cart
-      .map((i) => `• ${i.name} (${i.unit}) x ${i.qty} = ৳${i.price * i.qty}`)
-      .join("%0A");
+      .map((i) => `▫️ *${i.name}* (${i.unit}) × ${i.qty} = ৳${i.price * i.qty}`)
+      .join("\n");
 
     const courierInfo = `${COURIER_SERVICES[selectedCourier].banglaName} (${COURIER_SERVICES[selectedCourier].shortDeliveryType})`;
-    const notePart = custNote.trim() ? `%0A*বিশেষ নির্দেশনা:* ${encodeURIComponent(custNote.trim())}` : "";
-    const msg = `আসসালামু আলাইকুম *${tenant.name}*,%0Aআমি নাটোর থেকে নিচের পণ্যগুলো অর্ডার করতে চাই:%0A${lines}%0A%0A*গন্তব্য:* ${encodeURIComponent(DELIVERY_AREAS[deliveryArea].name)}%0A*নির্বাচিত কুরিয়ার:* ${encodeURIComponent(courierInfo)}%0A*পার্সেলের আনুমানিক ওজন:* ${effectiveCartWeightKg.toFixed(1)} কেজি%0A*ডেলিভারি চার্জ:* ৳${deliveryCharge}%0A*সর্বমোট বিল:* ৳${grandTotal}%0A%0A*নাম:* ${encodeURIComponent(custName.trim() || "উল্লেখ করা হয়নি")}%0A*মোবাইল:* ${encodeURIComponent(custPhone.trim() || "উল্লেখ করা হয়নি")}%0A*ঠিকানা:* ${encodeURIComponent(custAddress.trim() || "উল্লেখ করা হয়নি")}${notePart}`;
+    const notePart = custNote.trim() ? `\n📝 *বিশেষ নির্দেশনা:* ${custNote.trim()}` : "";
+    const msg = `আসসালামু আলাইকুম *${tenant.name}*,
+আমি ওয়েবসাইট থেকে নিচের পণ্যগুলো সরাসরি অর্ডার করতে চাই:
 
-    window.open(`https://wa.me/${tenant.whatsapp}?text=${msg}`, "_blank");
+🛒 *অর্ডারকৃত পণ্যসমূহ:*
+${lines}
+
+━━━━━━━━━━━━━━━━━━
+🚚 *গন্তব্য:* ${DELIVERY_AREAS[deliveryArea].name}
+📦 *নির্বাচিত কুরিয়ার:* ${courierInfo}
+⚖️ *পার্সেলের ওজন:* ~${effectiveCartWeightKg.toFixed(1)} কেজি
+🛵 *ডেলিভারি চার্জ:* ৳${deliveryCharge}
+💵 *সর্বমোট প্রদেয় বিল:* *৳${grandTotal}* (ক্যাশ অন ডেলিভারি)
+
+👤 *নাম:* ${custName.trim() || "উল্লেখ করা হয়নি"}
+📞 *মোবাইল:* ${custPhone.trim() || "উল্লেখ করা হয়নি"}
+📍 *ঠিকানা:* ${custAddress.trim() || "উল্লেখ করা হয়নি"}${notePart}
+━━━━━━━━━━━━━━━━━━
+অনুগ্রহ করে অর্ডারটি কনফার্ম করে দ্রুত পাঠিয়ে দিন। ধন্যবাদ!`;
+
+    window.open(`https://wa.me/${cleanWpNumber}?text=${encodeURIComponent(msg)}`, "_blank");
   }
 
   return (
@@ -726,10 +824,17 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
       <header className="bg-white/95 backdrop-blur-md border-b border-stone-200 sticky top-0 z-30 shadow-sm transition-all">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3.5 flex justify-between items-center gap-2 sm:gap-4">
           {/* Logo & Brand Info */}
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <div className="relative w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-800 to-emerald-950 flex items-center justify-center text-white shadow-md shadow-emerald-950/20 border border-emerald-500/30 group flex-shrink-0">
-              <Leaf className="w-4.5 h-4.5 sm:w-5.5 sm:h-5.5 text-emerald-200 group-hover:rotate-6 transition-transform duration-300 drop-shadow" />
-              <div className="absolute -top-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-amber-400 flex items-center justify-center shadow-sm">
+          <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+            <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-white p-0.5 shadow-md shadow-emerald-950/15 border-2 border-emerald-600/30 ring-2 ring-emerald-500/20 group flex-shrink-0 transition-transform duration-300 hover:scale-105">
+              <Image
+                src="/logo.png"
+                alt={tenant.name || "খাঁটি বাড়ি"}
+                width={48}
+                height={48}
+                priority
+                className="w-full h-full object-cover rounded-full"
+              />
+              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-amber-400 border border-white flex items-center justify-center shadow-xs">
                 <Sparkles className="w-2 sm:w-2.5 h-2 sm:h-2.5 text-emerald-950" />
               </div>
             </div>
@@ -795,17 +900,33 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
       {/* Order Success Banner */}
       {orderSuccessMsg && (
         <div className="max-w-7xl mx-auto px-4 mt-4 w-full animate-fadeIn">
-          <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 p-4 rounded-2xl flex items-center justify-between gap-3 shadow-md">
+          <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md">
             <div className="flex items-center gap-3">
               <CheckCircle2 className="w-6 h-6 text-emerald-600 flex-shrink-0" />
               <p className="text-sm font-semibold">{orderSuccessMsg}</p>
             </div>
-            <button
-              onClick={() => setOrderSuccessMsg(null)}
-              className="text-emerald-700 hover:text-emerald-950 p-1 rounded-lg hover:bg-emerald-100 transition"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              {completedOrder && (
+                <a
+                  href={completedOrder.whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 bg-[#25D366] hover:bg-[#20ba5a] text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm transition whitespace-nowrap active:scale-95 cursor-pointer"
+                >
+                  <MessageCircle className="w-3.5 h-3.5 fill-white text-white" />
+                  <span>WhatsApp-এ কপি পাঠান</span>
+                </a>
+              )}
+              <button
+                onClick={() => {
+                  setOrderSuccessMsg(null);
+                  setCompletedOrder(null);
+                }}
+                className="text-emerald-700 hover:text-emerald-950 p-1 rounded-lg hover:bg-emerald-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1722,9 +1843,20 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
             <div>
               {/* Cart Drawer Header */}
               <div className="flex justify-between items-center border-b border-stone-100 pb-3 sm:pb-4">
-                <div className="flex items-center gap-2">
-                  <ShoppingBag className="w-5 h-5 text-emerald-800" />
-                  <h3 className="font-extrabold text-lg sm:text-xl text-stone-900">অর্ডার ও চেকআউট</h3>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full overflow-hidden border border-emerald-600/30 bg-white p-0.5 shadow-xs flex-shrink-0">
+                    <Image
+                      src="/logo.png"
+                      alt={tenant.name}
+                      width={32}
+                      height={32}
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-base sm:text-lg text-stone-900 leading-tight">অর্ডার ও চেকআউট</h3>
+                    <p className="text-[10px] text-stone-500 font-medium">{tenant.name}</p>
+                  </div>
                 </div>
                 <button
                   onClick={() => setIsCartOpen(false)}
@@ -2490,19 +2622,108 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
         </div>
       )}
 
-      {/* Footer */}
-      <footer className="bg-stone-900 text-stone-400 text-xs py-8 mt-12 border-t border-stone-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
-          <div>
-            <p className="font-bold text-stone-200 text-sm">{tenant.name}</p>
-            <p className="mt-1">প্রাকৃতিক ও খাঁটি উপাদানের বিশ্বস্ত ঠিকানা।</p>
+      {/* ==================== ORDER CONFIRMATION / WHATSAPP MODAL ==================== */}
+      {completedOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-stone-200 overflow-hidden animate-scaleUp">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950 text-white p-6 text-center relative">
+              <button
+                onClick={() => setCompletedOrder(null)}
+                className="absolute top-4 right-4 text-emerald-300 hover:text-white p-1 rounded-full hover:bg-white/10 transition"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="w-14 h-14 bg-emerald-500/20 border-2 border-emerald-400/40 rounded-full flex items-center justify-center mx-auto mb-3 text-emerald-300 shadow-inner">
+                <CheckCircle2 className="w-8 h-8 text-emerald-300" />
+              </div>
+              <h3 className="text-xl font-black text-white">আলহামদুলিল্লাহ! অর্ডার সফল</h3>
+              <p className="text-xs text-emerald-200 mt-1">
+                আপনার অর্ডারটি ডাটাবেজে সফলভাবে সংরক্ষিত হয়েছে।
+              </p>
+              <div className="inline-block mt-3 bg-amber-400 text-emerald-950 font-black text-xs px-3.5 py-1 rounded-full shadow-md">
+                অর্ডার নং: #{completedOrder.orderNumber}
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-4">
+              <div className="bg-stone-50 border border-stone-200/80 rounded-2xl p-4 text-xs space-y-2 text-stone-700">
+                <div className="flex justify-between items-center pb-2 border-b border-stone-200/70">
+                  <span className="text-stone-500">কাস্টমার:</span>
+                  <span className="font-bold text-stone-900">{completedOrder.customerName}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-stone-200/70">
+                  <span className="text-stone-500">মোবাইল:</span>
+                  <span className="font-mono font-bold text-stone-900">{completedOrder.customerPhone}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-stone-200/70">
+                  <span className="text-stone-500">গন্তব্য ও কুরিয়ার:</span>
+                  <span className="font-bold text-stone-800 text-right">{completedOrder.deliveryArea} ({completedOrder.courier})</span>
+                </div>
+                <div className="flex justify-between items-center pt-1 text-sm font-black text-emerald-950">
+                  <span>সর্বমোট বিল:</span>
+                  <span className="text-amber-800 font-mono text-base font-black">৳{completedOrder.totalAmount} (COD)</span>
+                </div>
+              </div>
+
+              {/* WhatsApp Action Box */}
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 text-center">
+                <p className="text-xs font-semibold text-emerald-900 mb-2.5 leading-relaxed">
+                  📱 দ্রুত ডেলিভারি নিশ্চিত করতে ও অর্ডারের আপডেট পেতে নিচের বাটনে ট্যাপ করে WhatsApp-এ মেসেজটি পাঠান:
+                </p>
+                <a
+                  href={completedOrder.whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-[#25D366] hover:bg-[#20ba5a] active:scale-95 text-white font-black py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-emerald-900/10 transition text-sm cursor-pointer"
+                >
+                  <MessageCircle className="w-5 h-5 fill-white text-white" />
+                  <span>WhatsApp-এ অর্ডারের কপি পাঠান</span>
+                </a>
+              </div>
+
+              <button
+                onClick={() => setCompletedOrder(null)}
+                className="w-full bg-stone-100 hover:bg-stone-200 active:scale-95 text-stone-700 font-bold py-2.5 rounded-xl transition text-xs cursor-pointer"
+              >
+                ঠিক আছে, কেনাকাটা চালিয়ে যান
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-4 text-stone-500">
+        </div>
+      )}
+
+      {/* Footer */}
+      <footer className="bg-stone-900 text-stone-400 text-xs py-10 mt-12 border-t border-stone-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-6 text-center sm:text-left">
+          <div className="flex flex-col sm:flex-row items-center gap-3.5">
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-white p-0.5 border-2 border-amber-400/40 shadow-lg flex-shrink-0">
+              <Image
+                src="/logo.png"
+                alt={tenant.name}
+                width={48}
+                height={48}
+                className="w-full h-full object-cover rounded-full"
+              />
+            </div>
+            <div>
+              <p className="font-bold text-stone-100 text-sm flex items-center gap-2 justify-center sm:justify-start">
+                <span>{tenant.name}</span>
+                <span className="text-[10px] text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded-full border border-amber-400/30 font-semibold">
+                  ১০০% খাঁটি নিশ্চয়তা
+                </span>
+              </p>
+              <p className="mt-0.5 text-stone-400">গ্রাম-বাংলার প্রাকৃতিক মৌচাকের মধু, মিষ্টি আম ও খাঁটি গুড়ের বিশ্বস্ত প্রতিষ্ঠান।</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 text-stone-500 text-xs">
             <span>© {new Date().getFullYear()} {tenant.name}। সর্বস্বত্ব সংরক্ষিত।</span>
             <span>•</span>
             <a
               href={`/${tenant.slug}/admin`}
-              className="text-stone-500 hover:text-amber-400 transition flex items-center gap-1 font-medium"
+              className="text-stone-400 hover:text-amber-400 transition flex items-center gap-1 font-medium"
             >
               🔒 অ্যাডমিন প্রবেশ
             </a>

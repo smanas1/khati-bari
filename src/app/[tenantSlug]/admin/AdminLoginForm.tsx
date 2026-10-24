@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, Lock, ArrowLeft, KeyRound, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { verifyAdminPasswordAction } from "@/app/actions";
@@ -54,8 +55,17 @@ export default function AdminLoginForm({ slug, storeName }: { slug: string; stor
         {/* Login Card */}
         <div className="bg-stone-950/90 border border-stone-800 rounded-3xl p-7 sm:p-8 shadow-2xl backdrop-blur-xl">
           <div className="text-center mb-6">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-800 to-emerald-950 border border-emerald-600/40 flex items-center justify-center text-amber-400 mx-auto mb-3 shadow-lg">
-              <Lock className="w-7 h-7" />
+            <div className="relative w-16 h-16 rounded-full bg-white p-1 border-2 border-emerald-500/40 shadow-xl mx-auto mb-3 flex items-center justify-center">
+              <Image
+                src="/logo.png"
+                alt={storeName}
+                width={64}
+                height={64}
+                className="w-full h-full object-cover rounded-full"
+              />
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-950 border-2 border-stone-900 flex items-center justify-center text-amber-400 shadow">
+                <Lock className="w-3 h-3" />
+              </div>
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
               অ্যাডমিন সিকিউরিটি অ্যাক্সেস

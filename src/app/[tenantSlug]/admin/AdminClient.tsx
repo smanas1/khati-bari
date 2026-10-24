@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useTransition, useRef } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   createProductAction,
@@ -618,8 +619,14 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
       <header className="bg-emerald-950 text-white border-b border-emerald-900 sticky top-0 z-30 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex justify-between items-center gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-400 text-emerald-950 flex items-center justify-center font-black text-lg shadow">
-              🛡️
+            <div className="w-10 h-10 rounded-full bg-white p-0.5 border border-emerald-500/40 shadow flex items-center justify-center overflow-hidden flex-shrink-0">
+              <Image
+                src="/logo.png"
+                alt={tenant.name}
+                width={40}
+                height={40}
+                className="w-full h-full object-cover rounded-full"
+              />
             </div>
             <div>
               <div className="flex items-center gap-2">
