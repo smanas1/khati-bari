@@ -1,0 +1,76 @@
+// prisma/schema.prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id              String    @id @default(cuid())
+  slug            String    @unique // যেমন: "khatibari", "rajshahi-mango"
+  name            String
+  tagline         String?
+  whatsapp        String // যেমন: "8801700000000"
+  fbPageUrl       String?
+  deliveryLocal   Int       @default(60) // রাজশাহী সিটি
+  deliveryDhaka   Int       @default(100) // ঢাকা সিটি
+  deliveryOutside Int       @default(130) // সারা বাংলাদেশ
+  products        Product[]
+  orders          Order[]
+  createdAt       DateTime  @default(now())
+}
+
+model Product {
+  id          String      @id @default(cuid())
+  tenantId    String
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  category    String // "মধু", "আম", "গুড়", "অন্যান্য"
+  unit        String // "৫০০ গ্রাম", "১ কেজি", "১০ কেজি ক্যারেট"
+  price       Int
+  stock       Int         @default(20)
+  isSeasonal  Boolean     @default(false)
+  icon        String      @default("🍯")
+  image       String?
+  variants    String?
+  description String?
+  orderItems  OrderItem[]
+  createdAt   DateTime    @default(now())
+
+  @@index([tenantId, category])
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique
+  tenantId        String
+  tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerName    String
+  customerPhone   String
+  shippingAddress String
+  deliveryArea    String // "LOCAL" | "DHAKA" | "OUTSIDE"
+  deliveryCharge  Int
+  totalAmount     Int
+  paymentMethod   String // "COD" | "bKash" | "Nagad"
+  status          String      @default("PENDING") // PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED
+  items           OrderItem[]
+  createdAt       DateTime    @default(now())
+
+  @@index([tenantId, status])
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productName String
+  unit        String
+  quantity    Int
+  unitPrice   Int
+}
