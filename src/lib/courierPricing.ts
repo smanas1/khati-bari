@@ -3,7 +3,7 @@
  * নাটোর (Natore) থেকে সারা দেশে পণ্য পাঠানোর কুরিয়ার চার্জ ক্যালকুলেটর ও তথ্য
  * 
  * কুরিয়ারসমূহ:
- * ১. Steadfast Courier (হোম ডেলিভারি)
+ * ১. Street Fast (Steadfast) Courier (হোম ডেলিভারি)
  * ২. Pathao Courier (হোম ডেলিভারি)
  * ৩. Sundarban Courier Service (কাউন্টার / শাখা ডেলিভারি - আম ও ভারী পার্সেলের জন্য সবচেয়ে সাশ্রয়ী)
  * ৪. SA Paribahan (কাউন্টার / শাখা ডেলিভারি - দ্রুততম শাখা পার্সেল)
@@ -41,14 +41,14 @@ export interface CourierServiceInfo {
 export const COURIER_SERVICES: Record<CourierId, CourierServiceInfo> = {
   steadfast: {
     id: "steadfast",
-    name: "Steadfast Courier",
-    banglaName: "স্টেডফাস্ট কুরিয়ার",
+    name: "Street Fast Courier",
+    banglaName: "স্ট্রিট ফাস্ট কুরিয়ার",
     deliveryType: "হোম ডেলিভারি (Home Delivery)",
     shortDeliveryType: "হোম ডেলিভারি",
-    badge: "জনপ্রিয় ও নির্ভরযোগ্য",
+    badge: "জনপ্রিয় ও দ্রুততম",
     badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-300",
     duration: "২-৩ দিন",
-    description: "বাসায় বসে ক্যাশ অন ডেলিভারিতে পার্সেল রিসিভ করার জন্য সবচেয়ে জনপ্রিয়।",
+    description: "বাসায় বসে ক্যাশ অন ডেলিভারিতে দ্রুত পার্সেল পাওয়ার জন্য সবচেয়ে সুবিধাজনক।",
     bestFor: "মধু ও গুড় (১-৩ কেজি হোম ডেলিভারি)",
   },
   pathao: {

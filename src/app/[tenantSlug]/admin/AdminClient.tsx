@@ -955,7 +955,7 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
               </div>
             </div>
 
-            {/* ── Delivery Partner & Courier Control (Steadfast, Pathao, Sundarban, SA Paribahan) ── */}
+            {/* ── Delivery Partner & Courier Control (Street Fast, Pathao, Sundarban, SA Paribahan) ── */}
             <div className="bg-white rounded-2xl border border-stone-200/80 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100 bg-stone-50/60">
                 <div className="flex items-center gap-2.5">
