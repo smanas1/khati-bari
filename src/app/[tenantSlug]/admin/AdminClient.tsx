@@ -1162,11 +1162,13 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
               {/* Header */}
               <div className="px-5 py-4 border-b border-stone-100 bg-stone-50/60">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <Layers className="w-4.5 h-4.5 text-emerald-800" />
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-100/80 text-emerald-800 flex items-center justify-center flex-shrink-0 shadow-xs">
+                      <Layers className="w-5 h-5" />
+                    </div>
                     <div>
-                      <h3 className="font-extrabold text-base text-emerald-950">পণ্য, মূল্য ও স্টক ম্যানেজমেন্ট</h3>
-                      <p className="text-[11px] text-stone-500 font-medium">কামিং সুন (আম/গুড়), দ্রুত মূল্য ও স্টক কোয়ান্টিটি আপডেট</p>
+                      <h3 className="font-extrabold text-base text-stone-900">পণ্য, মূল্য ও স্টক ম্যানেজমেন্ট</h3>
+                      <p className="text-xs text-stone-500 font-medium">কামিং সুন স্ট্যাটাস, মূল্য এবং রিয়েল-টাইম স্টক আপডেট</p>
                     </div>
                   </div>
 
@@ -1175,10 +1177,10 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
                     <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
-                      placeholder="পণ্য বা ক্যাটাগরি খুঁজুন..."
+                      placeholder="পণ্য বা ক্যাটাগরি সার্চ করুন..."
                       value={productSearch}
                       onChange={(e) => setProductSearch(e.target.value)}
-                      className="w-full border border-stone-200 rounded-xl pl-8 pr-8 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600 bg-white"
+                      className="w-full border border-stone-200 rounded-xl pl-8 pr-8 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600 bg-white shadow-xs transition"
                     />
                     {productSearch && (
                       <button
@@ -1192,7 +1194,7 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
                 </div>
 
                 {/* Filter Tabs */}
-                <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-2 border-t border-stone-200/60">
+                <div className="flex flex-wrap items-center gap-1.5 mt-3.5 pt-3 border-t border-stone-200/60">
                   {[
                     { id: "ALL", label: "সব পণ্য", count: products.length },
                     { id: "IN_STOCK", label: "ইন-স্টক", count: inStockCount },
@@ -1206,20 +1208,20 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
                         key={tab.id}
                         type="button"
                         onClick={() => setProductFilter(tab.id as any)}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-xs ${
                           isActive
-                            ? "bg-emerald-800 text-white shadow-sm"
-                            : "bg-stone-100 hover:bg-stone-200 text-stone-600"
+                            ? "bg-emerald-800 text-white shadow-emerald-950/20"
+                            : "bg-white hover:bg-stone-100 text-stone-600 border border-stone-200/80"
                         }`}
                       >
                         <span>{tab.label}</span>
                         <span
-                          className={`px-1.5 py-0.2 rounded-md text-[10px] font-black ${
+                          className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
                             isActive
                               ? "bg-emerald-950 text-emerald-200"
                               : tab.id === "COMING_SOON" && tab.count > 0
-                              ? "bg-amber-200 text-amber-900"
-                              : "bg-stone-200 text-stone-700"
+                              ? "bg-amber-100 text-amber-900 border border-amber-200"
+                              : "bg-stone-100 text-stone-600"
                           }`}
                         >
                           {tab.count}
@@ -1248,17 +1250,17 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
                     return (
                       <div
                         key={p.id}
-                        className={`rounded-2xl border transition-all duration-200 ${
+                        className={`rounded-2xl border transition-all duration-200 bg-white ${
                           isEditing
-                            ? "bg-emerald-50/40 border-emerald-300 shadow-md p-5"
-                            : "bg-stone-50/40 hover:bg-white border-stone-200 p-4 shadow-sm"
+                            ? "border-emerald-300 shadow-lg ring-2 ring-emerald-500/10 p-5"
+                            : "border-stone-200/90 hover:border-stone-300 shadow-sm p-4 sm:p-5"
                         }`}
                       >
                         {/* ── Normal View Header ── */}
                         <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-start gap-3 min-w-0 flex-1">
+                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
                             {/* Product Image / Icon */}
-                            <div className="w-12 h-12 rounded-xl overflow-hidden bg-white border border-stone-200 flex-shrink-0 flex items-center justify-center shadow-sm">
+                            <div className="w-14 h-14 rounded-2xl overflow-hidden bg-stone-100 border border-stone-200/80 flex-shrink-0 flex items-center justify-center shadow-xs">
                               {p.image ? (
                                 <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
                               ) : (
@@ -1267,48 +1269,55 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
                             </div>
 
                             {/* Titles & Badges */}
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <h4 className="font-extrabold text-stone-900 text-base leading-tight">
                                   {p.name}
                                 </h4>
-                                <span className="text-[11px] font-bold bg-stone-200/80 text-stone-700 px-2 py-0.5 rounded-md">
+                                <span className="text-[11px] font-bold bg-stone-100 text-stone-600 px-2 py-0.5 rounded-md border border-stone-200/60">
                                   {p.category}
                                 </span>
                                 {p.isSeasonal && (
-                                  <span className="text-[11px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md">
+                                  <span className="text-[11px] font-bold bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-200/70">
                                     🌿 সিজনাল
                                   </span>
                                 )}
                               </div>
 
-                              {/* Status Badges */}
-                              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                              <div className="flex items-center gap-2.5 mt-1.5 flex-wrap">
+                                <span className="text-sm font-black text-emerald-950 font-mono">
+                                  ৳{p.price} <span className="text-xs text-stone-500 font-normal">/ {p.unit}</span>
+                                </span>
+
+                                <span className="text-stone-300">•</span>
+
                                 {isComingSoon ? (
-                                  <span className="inline-flex items-center gap-1 text-xs font-black bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded-full border border-amber-500 shadow-sm animate-pulse">
-                                    <Clock className="w-3.5 h-3.5 text-slate-950" />
-                                    ⏳ কামিং সুন (Coming Soon)
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-extrabold bg-amber-50 text-amber-900 border border-amber-300 px-2.5 py-0.5 rounded-full">
+                                    <Clock className="w-3 h-3 text-amber-600" />
+                                    কামিং সুন
                                   </span>
                                 ) : isOutOfStock ? (
-                                  <span className="inline-flex items-center gap-1 text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300 px-2.5 py-0.5 rounded-full">
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-rose-50 text-rose-800 border border-rose-300 px-2.5 py-0.5 rounded-full">
                                     <AlertTriangle className="w-3 h-3 text-rose-600" />
                                     স্টক শেষ (০)
                                   </span>
                                 ) : isLowStock ? (
-                                  <span className="inline-flex items-center gap-1 text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300 px-2.5 py-0.5 rounded-full">
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 px-2.5 py-0.5 rounded-full">
                                     <AlertTriangle className="w-3 h-3 text-amber-600" />
                                     সীমিত স্টক ({p.stock} টি)
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1 text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-0.5 rounded-full">
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 px-2.5 py-0.5 rounded-full">
                                     <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                                    স্টকে আছে ({p.stock} টি)
+                                    ইন-স্টক ({p.stock} টি)
                                   </span>
                                 )}
 
-                                <span className="text-xs text-stone-500 font-medium">
-                                  ডিফল্ট: {p.unit}
-                                </span>
+                                {pVariants.length > 1 && (
+                                  <span className="text-[11px] font-medium text-stone-500 bg-stone-100 px-2 py-0.5 rounded-md">
+                                    {pVariants.length} টি সাইজ ভ্যারিয়েন্ট
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1318,10 +1327,10 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
                             <button
                               type="button"
                               onClick={() => (isEditing ? setEditingProductId(null) : startEditProduct(p))}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-sm ${
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-xs ${
                                 isEditing
                                   ? "bg-stone-200 text-stone-800 hover:bg-stone-300"
-                                  : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200"
+                                  : "bg-white text-stone-700 hover:bg-stone-50 border border-stone-200 hover:border-emerald-300 hover:text-emerald-900"
                               }`}
                             >
                               {isEditing ? (
@@ -1331,8 +1340,8 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
                                 </>
                               ) : (
                                 <>
-                                  <Edit3 className="w-3.5 h-3.5 text-emerald-700" />
-                                  <span>এডিট ও মূল্য</span>
+                                  <Edit3 className="w-3.5 h-3.5 text-stone-500" />
+                                  <span>এডিট</span>
                                 </>
                               )}
                             </button>
@@ -1340,7 +1349,7 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
                             <button
                               type="button"
                               onClick={() => handleDeleteProduct(p.id, p.name)}
-                              className="p-2 rounded-xl text-rose-500 hover:bg-rose-100/70 border border-rose-200 transition"
+                              className="p-1.5 rounded-xl text-stone-400 hover:text-rose-600 hover:bg-rose-50 border border-stone-200 transition"
                               title="পণ্য ডিলিট করুন"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -1350,160 +1359,143 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
 
                         {/* ── Quick Controls Bar (Visible when not editing) ── */}
                         {!isEditing && (
-                          <div className="mt-3.5 pt-3 border-t border-stone-200/70 space-y-3">
-                            {/* Feature 1: Coming Soon Toggle & Feature 2: Stock Bar */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              {/* ── Feature 1: Coming Soon Toggle Button ── */}
-                              <div className="bg-white rounded-xl p-2.5 border border-stone-200/80 shadow-sm flex items-center justify-between gap-2">
-                                <div>
-                                  <span className="text-[11px] font-bold text-stone-500 block">কামিং সুন স্ট্যাটাস</span>
-                                  <span className="text-xs font-bold text-stone-800">
-                                    {isComingSoon ? "বর্তমানে কামিং সুন রয়েছে" : "বর্তমানে লাইভ / স্টকে রয়েছে"}
-                                  </span>
+                          <div className="mt-4 pt-3.5 border-t border-stone-100 space-y-3">
+                            {/* Segmented Status Toggle & Stock Controller Row */}
+                            <div className="flex flex-wrap items-center justify-between gap-3 bg-stone-50/70 p-3 rounded-2xl border border-stone-200/70">
+                              {/* 1. Status Segmented Switch */}
+                              <div className="flex items-center gap-2">
+                                <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">স্ট্যাটাস:</span>
+                                <div className="inline-flex p-0.5 rounded-xl bg-stone-200/70 border border-stone-300/60 shadow-inner">
+                                  <button
+                                    type="button"
+                                    onClick={() => isComingSoon && handleToggleComingSoon(p.id, true)}
+                                    disabled={isPending}
+                                    className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 ${
+                                      !isComingSoon
+                                        ? "bg-white text-emerald-900 shadow-sm"
+                                        : "text-stone-600 hover:text-stone-900"
+                                    }`}
+                                    title="পণ্যটি স্টোরফ্রন্টে লাইভ/ইন-স্টক করুন"
+                                  >
+                                    <span className={`w-2 h-2 rounded-full ${!isComingSoon ? "bg-emerald-500 animate-pulse" : "bg-stone-300"}`} />
+                                    <span>লাইভ স্টক</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => !isComingSoon && handleToggleComingSoon(p.id, false)}
+                                    disabled={isPending}
+                                    className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 ${
+                                      isComingSoon
+                                        ? "bg-white text-amber-900 shadow-sm"
+                                        : "text-stone-600 hover:text-stone-900"
+                                    }`}
+                                    title="আম বা গুড়ের মতো মৌসুমের আগে কামিং সুন চালু করুন"
+                                  >
+                                    <Clock className={`w-3.5 h-3.5 ${isComingSoon ? "text-amber-600" : "text-stone-400"}`} />
+                                    <span>কামিং সুন</span>
+                                  </button>
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={() => handleToggleComingSoon(p.id, isComingSoon)}
-                                  disabled={isPending}
-                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all active:scale-95 shadow-sm disabled:opacity-50 ${
-                                    isComingSoon
-                                      ? "bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-700"
-                                      : "bg-amber-500 hover:bg-amber-600 text-emerald-950 border border-amber-600"
-                                  }`}
-                                  title={
-                                    isComingSoon
-                                      ? "পণ্যটি ইন-স্টক হিসেবে চালু করুন"
-                                      : "আম বা গুড়ের মতো মৌসুমের আগে কামিং সুন চালু করুন"
-                                  }
-                                >
-                                  {isComingSoon ? (
-                                    <>
-                                      <CheckCircle2 className="w-3.5 h-3.5 text-white" />
-                                      <span>🟢 ইন-স্টক করুন (লাইভ)</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Clock className="w-3.5 h-3.5 text-emerald-950 animate-pulse" />
-                                      <span>⏳ কামিং সুন (Coming Soon) করুন</span>
-                                    </>
-                                  )}
-                                </button>
                               </div>
 
-                              {/* ── Feature 2: Quantity (Stock) Add & Update ── */}
-                              <div className="bg-white rounded-xl p-2.5 border border-stone-200/80 shadow-sm flex flex-col justify-between gap-1.5">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[11px] font-bold text-stone-500">মজুদ কোয়ান্টিটি / স্টক:</span>
-                                  <span className="text-xs font-black text-emerald-950 font-mono">
-                                    {p.stock} টি অবশিষ্ট
-                                  </span>
+                              {/* 2. Stock Controller */}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">স্টক:</span>
+                                <div className="flex items-center bg-white rounded-xl border border-stone-200 p-0.5 shadow-xs">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleStockDelta(p.id, -1)}
+                                    disabled={isPending || p.stock <= 0}
+                                    className="w-7 h-7 flex items-center justify-center text-stone-700 hover:bg-stone-100 rounded-lg font-black disabled:opacity-30 transition"
+                                    title="১ টি কমান"
+                                  >
+                                    <Minus className="w-3 h-3" />
+                                  </button>
+                                  <input
+                                    type="number"
+                                    value={quickStockInputs[p.id] ?? p.stock}
+                                    onChange={(e) =>
+                                      setQuickStockInputs((prev) => ({ ...prev, [p.id]: e.target.value }))
+                                    }
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        const val = Number(quickStockInputs[p.id]);
+                                        if (!isNaN(val)) handleSetStock(p.id, val);
+                                      }
+                                    }}
+                                    className="w-12 text-center text-xs font-black bg-transparent focus:outline-none font-mono text-stone-900"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleStockDelta(p.id, 1)}
+                                    disabled={isPending}
+                                    className="w-7 h-7 flex items-center justify-center text-stone-700 hover:bg-stone-100 rounded-lg font-black disabled:opacity-30 transition"
+                                    title="১ টি বাড়ান"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </button>
                                 </div>
 
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  {/* Stepper */}
-                                  <div className="flex items-center bg-stone-100 rounded-lg p-0.5 border border-stone-200">
+                                {quickStockInputs[p.id] !== undefined &&
+                                  quickStockInputs[p.id] !== String(p.stock) && (
                                     <button
                                       type="button"
-                                      onClick={() => handleStockDelta(p.id, -1)}
-                                      disabled={isPending || p.stock <= 0}
-                                      className="w-7 h-6 flex items-center justify-center text-stone-700 hover:bg-white rounded font-black disabled:opacity-30"
-                                      title="১ টি কমান"
+                                      onClick={() => handleSetStock(p.id, Number(quickStockInputs[p.id]) || 0)}
+                                      className="bg-emerald-700 text-white px-2.5 py-1 rounded-lg text-xs font-bold hover:bg-emerald-800 transition shadow-xs"
                                     >
-                                      <Minus className="w-3 h-3" />
+                                      সেভ
                                     </button>
-                                    <input
-                                      type="number"
-                                      value={quickStockInputs[p.id] ?? p.stock}
-                                      onChange={(e) =>
-                                        setQuickStockInputs((prev) => ({ ...prev, [p.id]: e.target.value }))
-                                      }
-                                      onKeyDown={(e) => {
-                                        if (e.key === "Enter") {
-                                          const val = Number(quickStockInputs[p.id]);
-                                          if (!isNaN(val)) handleSetStock(p.id, val);
-                                        }
-                                      }}
-                                      className="w-12 text-center text-xs font-black bg-transparent focus:bg-white focus:outline-none rounded"
-                                    />
+                                  )}
+
+                                {/* Quick Presets */}
+                                <div className="flex items-center gap-1">
+                                  {[5, 10, 20, 50].map((inc) => (
                                     <button
+                                      key={inc}
                                       type="button"
-                                      onClick={() => handleStockDelta(p.id, 1)}
+                                      onClick={() => handleStockDelta(p.id, inc)}
                                       disabled={isPending}
-                                      className="w-7 h-6 flex items-center justify-center text-stone-700 hover:bg-white rounded font-black disabled:opacity-30"
-                                      title="১ টি বাড়ান"
+                                      className="px-2 py-1 rounded-lg text-[11px] font-extrabold bg-white hover:bg-emerald-50 text-stone-700 hover:text-emerald-900 border border-stone-200 hover:border-emerald-200 transition shadow-xs active:scale-95"
+                                      title={`স্টকে +${inc} যোগ করুন`}
                                     >
-                                      <Plus className="w-3 h-3" />
+                                      +{inc}
                                     </button>
-                                  </div>
-
-                                  {/* If user typed custom stock, show Save button */}
-                                  {quickStockInputs[p.id] !== undefined &&
-                                    quickStockInputs[p.id] !== String(p.stock) && (
-                                      <button
-                                        type="button"
-                                        onClick={() => handleSetStock(p.id, Number(quickStockInputs[p.id]) || 0)}
-                                        className="bg-emerald-700 text-white px-2 py-1 rounded-lg text-xs font-bold hover:bg-emerald-800 transition"
-                                      >
-                                        সেভ
-                                      </button>
-                                    )}
-
-                                  {/* Quick Add Presets */}
-                                  <div className="flex items-center gap-1">
-                                    {[5, 10, 20, 50].map((inc) => (
-                                      <button
-                                        key={inc}
-                                        type="button"
-                                        onClick={() => handleStockDelta(p.id, inc)}
-                                        disabled={isPending}
-                                        className="px-2 py-0.5 rounded-lg text-[11px] font-extrabold bg-stone-100 hover:bg-emerald-100 text-stone-700 hover:text-emerald-900 border border-stone-200 transition active:scale-95"
-                                        title={`স্টকে +${inc} যোগ করুন`}
-                                      >
-                                        +{inc}
-                                      </button>
-                                    ))}
-                                    <button
-                                      type="button"
-                                      onClick={() => handleSetStock(p.id, 0)}
-                                      disabled={isPending || p.stock === 0}
-                                      className="px-1.5 py-0.5 rounded-lg text-[10px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition"
-                                      title="স্টক ০ (আউট অব স্টক) করুন"
-                                    >
-                                      ০ শেষ
-                                    </button>
-                                  </div>
+                                  ))}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSetStock(p.id, 0)}
+                                    disabled={isPending || p.stock === 0}
+                                    className="px-2 py-1 rounded-lg text-[11px] font-bold bg-white hover:bg-rose-50 text-rose-600 border border-stone-200 hover:border-rose-200 transition shadow-xs"
+                                    title="স্টক ০ (আউট অব স্টক) করুন"
+                                  >
+                                    ০ শেষ
+                                  </button>
                                 </div>
                               </div>
                             </div>
 
-                            {/* ── Feature 3: Pricing & Variants Overview ── */}
-                            <div className="bg-white rounded-xl p-2.5 border border-stone-200/80 shadow-sm flex flex-wrap items-center justify-between gap-2">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xs font-black text-amber-700 font-mono">
-                                  বেসিক মূল্য: ৳{p.price} / {p.unit}
-                                </span>
-                                <span className="text-stone-300">|</span>
-                                <span className="text-[11px] font-bold text-stone-500">সাইজ ভ্যারিয়েন্ট মূল্য:</span>
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  {pVariants.map((v, idx) => (
-                                    <span
-                                      key={idx}
-                                      className="inline-flex items-center gap-1 bg-stone-100 text-stone-800 border border-stone-200 px-2 py-0.5 rounded-lg text-[11px] font-semibold"
-                                    >
-                                      <span>{v.unit}:</span>
-                                      <span className="font-bold text-emerald-800 font-mono">৳{v.price}</span>
-                                    </span>
-                                  ))}
-                                </div>
+                            {/* 3. Variants & Pricing Row */}
+                            <div className="flex items-center justify-between gap-3 flex-wrap px-1">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[11px] font-bold text-stone-500">সাইজ ভ্যারিয়েন্ট:</span>
+                                {pVariants.map((v, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="inline-flex items-center gap-1.5 bg-stone-100 text-stone-800 border border-stone-200 px-2.5 py-1 rounded-lg text-xs font-semibold"
+                                  >
+                                    <span>{v.unit}</span>
+                                    <span className="font-black text-emerald-800 font-mono">৳{v.price}</span>
+                                  </span>
+                                ))}
                               </div>
 
                               <button
                                 type="button"
                                 onClick={() => startEditProduct(p)}
-                                className="inline-flex items-center gap-1 text-emerald-800 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-lg text-xs font-bold transition border border-emerald-200"
+                                className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-900 transition hover:underline"
                               >
-                                <Tag className="w-3 h-3" />
-                                <span>মূল্য ও সাইজ এডিট করুন</span>
+                                <span>মূল্য ও সাইজ এডিট</span>
+                                <ChevronRight className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </div>
