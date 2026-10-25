@@ -1,4 +1,5 @@
 // src/lib/notifications.ts
+import { getSiteUrl } from "./siteConfig";
 
 interface OrderNotificationData {
   orderNumber: string;
@@ -31,7 +32,7 @@ export function formatOrderMessage(order: OrderNotificationData): string {
     )
     .join("\n\n");
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://khatibari.vercel.app";
+  const appUrl = getSiteUrl();
 
   return `🔔 *নতুন অর্ডার এসেছে!* (#${order.orderNumber})
 ━━━━━━━━━━━━━━━━━━

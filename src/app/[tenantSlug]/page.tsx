@@ -1,6 +1,7 @@
 // src/app/[tenantSlug]/page.tsx
 import type { Metadata } from "next";
 import { getOrInitTenant } from "@/app/actions";
+import { getSiteUrl } from "@/lib/siteConfig";
 import StorefrontClient from "./StorefrontClient";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +13,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { tenantSlug } = await params;
   const tenant = await getOrInitTenant(tenantSlug);
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://khatibari.vercel.app";
+  const baseUrl = getSiteUrl();
   const canonicalUrl =
     tenantSlug === "khatibari" || tenantSlug === "khati-bari" || tenantSlug === "khati-shombhar"
       ? baseUrl
@@ -23,8 +24,10 @@ export async function generateMetadata({
     tenant.tagline ||
     "গ্রাম-বাংলার প্রাকৃতিক মৌচাক থেকে সংগৃহীত খাঁটি চাকের মধু, রাজশাহীর মিষ্টি আম ও খাঁটি খেজুরের গুড়ের বিশ্বস্ত প্রতিষ্ঠান। সারাদেশে ক্যাশ অন ডেলিভারি।";
   const shareImage = tenant.products[0]?.image || "/og-image.jpg";
+  const ogImageUrl = shareImage.startsWith("http") ? shareImage : `${baseUrl}${shareImage}`;
 
   return {
+    metadataBase: new URL(baseUrl),
     title,
     description,
     keywords: [
@@ -65,7 +68,8 @@ export async function generateMetadata({
       siteName: tenant.name,
       images: [
         {
-          url: shareImage.startsWith("http") ? shareImage : `${baseUrl}${shareImage}`,
+          url: ogImageUrl,
+          secureUrl: ogImageUrl,
           width: 1376,
           height: 768,
           alt: `${tenant.name} — প্রাকৃতিক খাদ্যোপাদান`,
@@ -76,7 +80,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title,
       description,
-      images: [shareImage.startsWith("http") ? shareImage : `${baseUrl}${shareImage}`],
+      images: [ogImageUrl],
     },
     robots: {
       index: true,

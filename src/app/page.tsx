@@ -1,17 +1,19 @@
 // src/app/page.tsx
 import type { Metadata } from "next";
 import { getOrInitTenant } from "@/app/actions";
+import { getSiteUrl } from "@/lib/siteConfig";
 import StorefrontClient from "./[tenantSlug]/StorefrontClient";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://khatibari.vercel.app";
+  const baseUrl = getSiteUrl();
   const title = "খাঁটি বাড়ি — প্রাকৃতিক মধু, রাজশাহীর আম ও খাঁটি গুড়ের বিশ্বস্ত প্রতিষ্ঠান";
   const description =
     "গ্রাম-বাংলার প্রাকৃতিক মৌচাক থেকে সংগৃহীত খাঁটি চাকের মধু, রাজশাহীর মিষ্টি আম ও খাঁটি খেজুরের গুড় কিনুন সরাসরি মৌয়াল ও বাগান থেকে। সারাদেশে ক্যাশ অন ডেলিভারি।";
 
   return {
+    metadataBase: new URL(baseUrl),
     title,
     description,
     keywords: [
@@ -55,10 +57,11 @@ export async function generateMetadata(): Promise<Metadata> {
       images: [
         {
           url: `${baseUrl}/og-image.jpg`,
+          secureUrl: `${baseUrl}/og-image.jpg`,
           width: 1376,
           height: 768,
           type: "image/jpeg",
-          alt: "খাঁটি বাড়ি - প্রাকৃতিক খাদ্যোপাদান",
+          alt: "খাঁটি বাড়ি - প্রাকৃতিক মধু, রাজশাহীর আম ও খাঁটি গুড়",
         },
       ],
     },

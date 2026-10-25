@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Hind_Siliguri, Geist_Mono } from "next/font/google";
+import { getSiteUrl } from "@/lib/siteConfig";
 import "./globals.css";
 
 const hindSiliguri = Hind_Siliguri({
@@ -15,8 +16,10 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+const siteUrl = getSiteUrl();
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://khatibari.vercel.app"),
+  metadataBase: new URL(siteUrl),
   title: "খাঁটি বাড়ি (Khati Bari) - খাঁটি প্রাকৃতিক মধু, রাজশাহীর আম ও খাঁটি গুড়",
   description:
     "গ্রাম-বাংলার প্রাকৃতিক মৌচাক থেকে সংগৃহীত খাঁটি চাকের মধু, রাজশাহীর মিষ্টি আম ও খাঁটি খেজুরের গুড়ের বিশ্বস্ত প্রতিষ্ঠান। সারাদেশে ক্যাশ অন ডেলিভারি।",
@@ -24,17 +27,18 @@ export const metadata: Metadata = {
     title: "খাঁটি বাড়ি — খাঁটি প্রাকৃতিক মধু, রাজশাহীর মিষ্টি আম ও খাঁটি গুড়ের বিশ্বস্ত প্রতিষ্ঠান",
     description:
       "গ্রাম-বাংলার প্রাকৃতিক মৌচাক থেকে সংগৃহীত খাঁটি চাকের মধু, রাজশাহীর মিষ্টি আম ও খাঁটি খেজুরের গুড় সরাসরি বাগান ও মৌয়াল থেকে। সারাদেশে ক্যাশ অন ডেলিভারি।",
-    url: "https://khatibari.vercel.app",
+    url: siteUrl,
     siteName: "খাঁটি বাড়ি",
     locale: "bn_BD",
     type: "website",
     images: [
       {
-        url: "/og-image.jpg",
+        url: `${siteUrl}/og-image.jpg`,
+        secureUrl: `${siteUrl}/og-image.jpg`,
         width: 1376,
         height: 768,
         type: "image/jpeg",
-        alt: "খাঁটি বাড়ি - প্রাকৃতিক খাদ্য উপাদান",
+        alt: "খাঁটি বাড়ি - প্রাকৃতিক মধু, রাজশাহীর আম ও খাঁটি গুড়",
       },
     ],
   },
@@ -43,7 +47,7 @@ export const metadata: Metadata = {
     title: "খাঁটি বাড়ি — খাঁটি প্রাকৃতিক মধু, রাজশাহীর মিষ্টি আম ও খাঁটি গুড়ের বিশ্বস্ত প্রতিষ্ঠান",
     description:
       "গ্রাম-বাংলার প্রাকৃতিক মৌচাক থেকে সংগৃহীত খাঁটি চাকের মধু, রাজশাহীর মিষ্টি আম ও খাঁটি খেজুরের গুড় সরাসরি বাগান ও মৌয়াল থেকে। সারাদেশে ক্যাশ অন ডেলিভারি।",
-    images: ["/og-image.jpg"],
+    images: [`${siteUrl}/og-image.jpg`],
   },
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
