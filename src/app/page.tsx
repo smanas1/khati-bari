@@ -56,8 +56,8 @@ export async function generateMetadata(): Promise<Metadata> {
       type: "website",
       images: [
         {
-          url: `${baseUrl}/og-image.jpg`,
-          secureUrl: `${baseUrl}/og-image.jpg`,
+          url: `${baseUrl}/khati-bari-og.jpg`,
+          secureUrl: `${baseUrl}/khati-bari-og.jpg`,
           width: 1376,
           height: 768,
           type: "image/jpeg",
@@ -69,7 +69,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title,
       description,
-      images: [`${baseUrl}/og-image.jpg`],
+      images: [`${baseUrl}/khati-bari-og.jpg`],
     },
     robots: {
       index: true,

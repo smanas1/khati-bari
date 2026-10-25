@@ -33,8 +33,8 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: `${siteUrl}/og-image.jpg`,
-        secureUrl: `${siteUrl}/og-image.jpg`,
+        url: `${siteUrl}/khati-bari-og.jpg`,
+        secureUrl: `${siteUrl}/khati-bari-og.jpg`,
         width: 1376,
         height: 768,
         type: "image/jpeg",
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     title: "খাঁটি বাড়ি — খাঁটি প্রাকৃতিক মধু, রাজশাহীর মিষ্টি আম ও খাঁটি গুড়ের বিশ্বস্ত প্রতিষ্ঠান",
     description:
       "গ্রাম-বাংলার প্রাকৃতিক মৌচাক থেকে সংগৃহীত খাঁটি চাকের মধু, রাজশাহীর মিষ্টি আম ও খাঁটি খেজুরের গুড় সরাসরি বাগান ও মৌয়াল থেকে। সারাদেশে ক্যাশ অন ডেলিভারি।",
-    images: [`${siteUrl}/og-image.jpg`],
+    images: [`${siteUrl}/khati-bari-og.jpg`],
   },
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
