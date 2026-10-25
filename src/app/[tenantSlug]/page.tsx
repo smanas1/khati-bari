@@ -23,7 +23,7 @@ export async function generateMetadata({
   const description =
     tenant.tagline ||
     "গ্রাম-বাংলার প্রাকৃতিক মৌচাক থেকে সংগৃহীত খাঁটি চাকের মধু, রাজশাহীর মিষ্টি আম ও খাঁটি খেজুরের গুড়ের বিশ্বস্ত প্রতিষ্ঠান। সারাদেশে ক্যাশ অন ডেলিভারি।";
-  const shareImage = tenant.products[0]?.image || "/khati-bari-og.jpg";
+  const shareImage = tenant.products[0]?.image || "/khati-bari-banner.jpg";
   const ogImageUrl = shareImage.startsWith("http") ? shareImage : `${baseUrl}${shareImage}`;
 
   return {

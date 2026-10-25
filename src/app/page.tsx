@@ -56,10 +56,10 @@ export async function generateMetadata(): Promise<Metadata> {
       type: "website",
       images: [
         {
-          url: `${baseUrl}/khati-bari-og.jpg`,
-          secureUrl: `${baseUrl}/khati-bari-og.jpg`,
-          width: 1376,
-          height: 768,
+          url: `${baseUrl}/khati-bari-banner.jpg`,
+          secureUrl: `${baseUrl}/khati-bari-banner.jpg`,
+          width: 1200,
+          height: 630,
           type: "image/jpeg",
           alt: "খাঁটি বাড়ি - প্রাকৃতিক মধু, রাজশাহীর আম ও খাঁটি গুড়",
         },
@@ -69,7 +69,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title,
       description,
-      images: [`${baseUrl}/khati-bari-og.jpg`],
+      images: [`${baseUrl}/khati-bari-banner.jpg`],
     },
     robots: {
       index: true,
