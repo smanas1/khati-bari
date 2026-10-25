@@ -330,10 +330,10 @@ export async function updateEnabledCouriersAction(tenantId: string, slug: string
 
 // ─── 8. অ্যাডমিন পাসওয়ার্ড ভেরিফিকেশন ────────────────────────────────────
 export async function verifyAdminPasswordAction(password: string): Promise<{ success: boolean; error?: string }> {
-  const envPassword = (process.env.ADMIN_PASSWORD || "admin123").replace(/^["']|["']$/g, "").trim();
+  const adminPassword = (process.env.ADMIN_PASSWORD || "admin123").replace(/^["']|["']$/g, "").trim();
   const inputPassword = String(password || "").trim();
 
-  if (inputPassword === envPassword || inputPassword === "admin123") {
+  if (inputPassword && inputPassword === adminPassword) {
     const cookieStore = await cookies();
     cookieStore.set("khati_admin_session", "authenticated", {
       httpOnly: true,
@@ -344,7 +344,7 @@ export async function verifyAdminPasswordAction(password: string): Promise<{ suc
     });
     return { success: true };
   }
-  return { success: false, error: "ভুল পাসওয়ার্ড! সঠিক পাসওয়ার্ড দিন (ডিফল্ট: admin123)" };
+  return { success: false, error: "ভুল পাসওয়ার্ড! সঠিক পাসওয়ার্ড দিন।" };
 }
 
 // ─── 9. অ্যাডমিন লগআউট ───────────────────────────────────────────────────────

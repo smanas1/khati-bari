@@ -88,13 +88,6 @@ export default function AdminLoginForm({ slug, storeName }: { slug: string; stor
                 <label className="text-xs font-bold text-stone-300">
                   অ্যাডমিন পাসওয়ার্ড লিখুন
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setPassword("admin123")}
-                  className="text-[10px] text-amber-400 hover:text-amber-300 underline font-semibold transition"
-                >
-                  পাসওয়ার্ড বসান (admin123)
-                </button>
               </div>
               <div className="relative">
                 <KeyRound className="w-4 h-4 text-stone-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -104,7 +97,7 @@ export default function AdminLoginForm({ slug, storeName }: { slug: string; stor
                   autoFocus
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="admin123"
+                  placeholder="পাসওয়ার্ড লিখুন..."
                   className="w-full bg-stone-900 border border-stone-800 rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-stone-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition font-mono"
                 />
                 <button
