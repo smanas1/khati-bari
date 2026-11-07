@@ -36,6 +36,8 @@ import {
   ArrowRight,
   Flame,
   Zap,
+  Headphones,
+  ExternalLink,
 } from "lucide-react";
 import {
   COURIER_SERVICES,
@@ -100,6 +102,7 @@ interface TenantData {
   name: string;
   tagline: string | null;
   whatsapp: string;
+  whatsapp2?: string | null;
   fbPageUrl: string | null;
   deliveryLocal: number;
   deliveryDhaka: number;
@@ -138,6 +141,7 @@ interface CompletedOrderData {
   deliveryArea: string;
   courier: string;
   whatsappUrl: string;
+  whatsappUrl2?: string;
 }
 
 
@@ -188,18 +192,35 @@ export function getDefaultVariant(p: TenantProduct, variants: ProductVariant[]):
   return variants[0] || { unit: p.unit, price: p.price };
 }
 
-function formatPhoneDisplay(phoneStr: string): string {
+function cleanWaNumber(phoneStr?: string | null): string {
+  if (!phoneStr) return "";
+  let clean = phoneStr.replace(/\D/g, "");
+  if (clean.startsWith("01") && clean.length === 11) {
+    clean = "88" + clean;
+  }
+  return clean;
+}
+
+function formatPhoneDisplay(phoneStr?: string | null): string {
+  if (!phoneStr) return "";
   const clean = phoneStr.replace(/\D/g, "");
   if (clean.startsWith("880") && clean.length === 13) {
-    return `+880 ${clean.slice(3, 7)}-${clean.slice(7)}`;
+    return `0${clean.slice(3, 7)}-${clean.slice(7)}`;
   }
   if (clean.startsWith("01") && clean.length === 11) {
-    return `+88 ${clean.slice(0, 5)}-${clean.slice(5)}`;
+    return `${clean.slice(0, 5)}-${clean.slice(5)}`;
   }
   return phoneStr;
 }
 
 export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
+  const rawPhone1 = tenant.whatsapp || "01778910924";
+  const rawPhone2 = tenant.whatsapp2 || "01852387701";
+  const cleanPhone1 = cleanWaNumber(rawPhone1);
+  const cleanPhone2 = cleanWaNumber(rawPhone2);
+  const displayPhone1 = formatPhoneDisplay(rawPhone1);
+  const displayPhone2 = formatPhoneDisplay(rawPhone2);
+
   const [selectedCat, setSelectedCat] = useState("ALL");
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -207,6 +228,8 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
   const [cardQuantities, setCardQuantities] = useState<Record<string, number>>({});
   const [wishlist, setWishlist] = useState<Record<string, boolean>>({});
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [isWaOrderModalOpen, setIsWaOrderModalOpen] = useState(false);
   const [addedItemKey, setAddedItemKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [orderSuccessMsg, setOrderSuccessMsg] = useState<string | null>(null);
@@ -609,11 +632,9 @@ export default function StorefrontClient({ tenant }: { tenant: TenantData }) {
         })),
       });
 
-      // Prepare WhatsApp redirect for Admin WhatsApp
-      let cleanWpNumber = (tenant.whatsapp || "").replace(/\D/g, "");
-      if (cleanWpNumber.startsWith("01") && cleanWpNumber.length === 11) {
-        cleanWpNumber = "88" + cleanWpNumber;
-      }
+      // Prepare WhatsApp redirects for both Admin WhatsApp numbers
+      const cleanWp1 = cleanWaNumber(tenant.whatsapp || "01778910924");
+      const cleanWp2 = cleanWaNumber(tenant.whatsapp2 || "01852387701");
 
       const itemsListText = itemsSnapshot
         .map((item) => `▫️ *${item.name}* (${item.unit}) × ${item.qty} = ৳${item.price * item.qty}`)
@@ -642,9 +663,10 @@ ${itemsListText}
 ━━━━━━━━━━━━━━━━━━
 অনুগ্রহ করে অর্ডারটি দ্রুত প্রসেস করে কনফার্ম করুন। ধন্যবাদ!`;
 
-      const wpUrl = `https://wa.me/${cleanWpNumber}?text=${encodeURIComponent(wpMessage)}`;
+      const wpUrl = `https://wa.me/${cleanWp1}?text=${encodeURIComponent(wpMessage)}`;
+      const wpUrl2 = `https://wa.me/${cleanWp2}?text=${encodeURIComponent(wpMessage)}`;
 
-      // Attempt immediate redirection to WhatsApp
+      // Attempt immediate redirection to Primary WhatsApp
       try {
         window.open(wpUrl, "_blank");
       } catch (e) {
@@ -660,6 +682,7 @@ ${itemsListText}
         deliveryArea: currentDeliveryAreaName,
         courier: courierInfo,
         whatsappUrl: wpUrl,
+        whatsappUrl2: wpUrl2,
       });
 
       setCart([]);
@@ -693,28 +716,14 @@ ${itemsListText}
     }
   }
 
-  function handleWhatsAppOrder() {
-    if (cart.length === 0) {
-      addToast("warning", "প্রথমে কার্টে পণ্য যোগ করুন!");
-      return;
-    }
-
-    if (!custName.trim() || !custPhone.trim() || !custAddress.trim()) {
-      addToast("info", "সহজ ডেলিভারির জন্য নাম, ফোন ও ঠিকানা পূরণ করার পরামর্শ দেওয়া হলো।");
-    }
-
-    let cleanWpNumber = (tenant.whatsapp || "").replace(/\D/g, "");
-    if (cleanWpNumber.startsWith("01") && cleanWpNumber.length === 11) {
-      cleanWpNumber = "88" + cleanWpNumber;
-    }
-
+  function getWhatsAppOrderMessage() {
     const lines = cart
       .map((i) => `▫️ *${i.name}* (${i.unit}) × ${i.qty} = ৳${i.price * i.qty}`)
       .join("\n");
 
     const courierInfo = `${COURIER_SERVICES[selectedCourier].banglaName} (${COURIER_SERVICES[selectedCourier].shortDeliveryType})`;
     const notePart = custNote.trim() ? `\n📝 *বিশেষ নির্দেশনা:* ${custNote.trim()}` : "";
-    const msg = `আসসালামু আলাইকুম *${tenant.name}*,
+    return `আসসালামু আলাইকুম *${tenant.name}*,
 আমি ওয়েবসাইট থেকে নিচের পণ্যগুলো সরাসরি অর্ডার করতে চাই:
 
 🛒 *অর্ডারকৃত পণ্যসমূহ:*
@@ -732,8 +741,31 @@ ${lines}
 📍 *ঠিকানা:* ${custAddress.trim() || "উল্লেখ করা হয়নি"}${notePart}
 ━━━━━━━━━━━━━━━━━━
 অনুগ্রহ করে অর্ডারটি কনফার্ম করে দ্রুত পাঠিয়ে দিন। ধন্যবাদ!`;
+  }
 
-    window.open(`https://wa.me/${cleanWpNumber}?text=${encodeURIComponent(msg)}`, "_blank");
+  function executeWhatsAppOrder(targetNumber: string) {
+    if (cart.length === 0) {
+      addToast("warning", "প্রথমে কার্টে পণ্য যোগ করুন!");
+      return;
+    }
+    const cleanNum = cleanWaNumber(targetNumber);
+    const msg = getWhatsAppOrderMessage();
+    window.open(`https://wa.me/${cleanNum}?text=${encodeURIComponent(msg)}`, "_blank");
+    setIsWaOrderModalOpen(false);
+  }
+
+  function handleWhatsAppOrder() {
+    if (cart.length === 0) {
+      addToast("warning", "প্রথমে কার্টে পণ্য যোগ করুন!");
+      return;
+    }
+
+    if (!custName.trim() || !custPhone.trim() || !custAddress.trim()) {
+      addToast("info", "সহজ ডেলিভারির জন্য নাম, ফোন ও ঠিকানা পূরণ করার পরামর্শ দেওয়া হলো।");
+    }
+
+    // Open selector modal so user can choose Hotline 1 or Hotline 2
+    setIsWaOrderModalOpen(true);
   }
 
   return (
@@ -783,15 +815,14 @@ ${lines}
                 প্রাকৃতিক ও নির্ভেজাল খাদ্যোপাদান
               </span>
             </div>
-            <a
-              href={`https://wa.me/${tenant.whatsapp}`}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-1 text-[11px] font-bold text-emerald-200 bg-emerald-900/90 hover:bg-emerald-800 px-2.5 py-0.5 rounded-full border border-emerald-700/80 transition flex-shrink-0"
+            <button
+              type="button"
+              onClick={() => setIsContactModalOpen(true)}
+              className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-100 bg-emerald-900/90 hover:bg-emerald-800 px-2.5 py-0.5 rounded-full border border-emerald-700/80 transition flex-shrink-0 cursor-pointer active:scale-95"
             >
               <Phone className="w-3 h-3 text-amber-400" />
-              <span>যোগাযোগ</span>
-            </a>
+              <span>২টি হটলাইন ও WhatsApp</span>
+            </button>
           </div>
 
           {/* Desktop Rich Layout */}
@@ -811,9 +842,30 @@ ${lines}
                 <Truck className="w-3.5 h-3.5 text-amber-400" />
                 <span>সারাদেশে দ্রুত ডেলিভারি</span>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2 bg-emerald-900/70 px-3 py-1 rounded-full border border-emerald-800/80">
                 <Phone className="w-3.5 h-3.5 text-amber-400" />
-                <span>হটলাইন: {formatPhoneDisplay(tenant.whatsapp)}</span>
+                <a
+                  href={`tel:${rawPhone1.replace(/\D/g, "")}`}
+                  className="hover:text-amber-300 transition"
+                  title="হটলাইন ১-এ কল করুন"
+                >
+                  ১: {displayPhone1}
+                </a>
+                <span className="text-emerald-600">|</span>
+                <a
+                  href={`tel:${rawPhone2.replace(/\D/g, "")}`}
+                  className="hover:text-amber-300 transition"
+                  title="হটলাইন ২-এ কল করুন"
+                >
+                  ২: {displayPhone2}
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setIsContactModalOpen(true)}
+                  className="ml-1 text-[10px] bg-amber-400 hover:bg-amber-300 text-emerald-950 font-black px-2 py-0.5 rounded-full transition cursor-pointer shadow-xs"
+                >
+                  যোগাযোগ
+                </button>
               </div>
             </div>
           </div>
@@ -871,15 +923,18 @@ ${lines}
               <span className="sm:hidden text-[11px]">কুরিয়ার চার্জ</span>
             </button>
 
-            <a
-              href={`https://wa.me/${tenant.whatsapp}`}
-              target="_blank"
-              rel="noreferrer"
-              className="hidden sm:inline-flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm hover:scale-[1.02]"
+            <button
+              type="button"
+              onClick={() => setIsContactModalOpen(true)}
+              title="WhatsApp ও কাস্টমার হেল্পলাইন (২টি নম্বর)"
+              className="hidden sm:inline-flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm hover:scale-[1.02] cursor-pointer"
             >
               <MessageCircle className="w-4 h-4 text-emerald-600 fill-emerald-600" />
               <span>WhatsApp</span>
-            </a>
+              <span className="bg-emerald-200 text-emerald-950 text-[10px] font-black px-1.5 py-0.5 rounded-full">
+                ২টি নম্বর
+              </span>
+            </button>
 
             <button
               onClick={() => setIsCartOpen(true)}
@@ -907,15 +962,30 @@ ${lines}
             </div>
             <div className="flex items-center gap-2 self-end sm:self-auto">
               {completedOrder && (
-                <a
-                  href={completedOrder.whatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 bg-[#25D366] hover:bg-[#20ba5a] text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm transition whitespace-nowrap active:scale-95 cursor-pointer"
-                >
-                  <MessageCircle className="w-3.5 h-3.5 fill-white text-white" />
-                  <span>WhatsApp-এ কপি পাঠান</span>
-                </a>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <a
+                    href={completedOrder.whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 bg-[#25D366] hover:bg-[#20ba5a] text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm transition whitespace-nowrap active:scale-95 cursor-pointer"
+                    title={`WhatsApp ১: ${displayPhone1}`}
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 fill-white text-white" />
+                    <span>WhatsApp ১</span>
+                  </a>
+                  {completedOrder.whatsappUrl2 && (
+                    <a
+                      href={completedOrder.whatsappUrl2}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 bg-[#1da851] hover:bg-[#188c43] text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm transition whitespace-nowrap active:scale-95 cursor-pointer"
+                      title={`WhatsApp ২: ${displayPhone2}`}
+                    >
+                      <MessageCircle className="w-3.5 h-3.5 fill-white text-white" />
+                      <span>WhatsApp ২</span>
+                    </a>
+                  )}
+                </div>
               )}
               <button
                 onClick={() => {
@@ -966,17 +1036,17 @@ ${lines}
                   <span>পণ্যসমূহ দেখুন ও অর্ডার করুন</span>
                 </button>
 
-                <a
-                  href={`https://wa.me/${tenant.whatsapp}?text=${encodeURIComponent(
-                    `আসসালামু আলাইকুম ${tenant.name}, আমি আপনাদের পণ্য অর্ডার সংক্রান্ত বিষয়ে জানতে চাচ্ছি।`
-                  )}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 bg-emerald-900/80 hover:bg-emerald-800/90 active:scale-95 text-emerald-100 border border-emerald-600/50 backdrop-blur-md font-bold px-5 py-3.5 rounded-2xl text-sm sm:text-base transition-all shadow-md hover:scale-[1.02]"
+                <button
+                  type="button"
+                  onClick={() => setIsContactModalOpen(true)}
+                  className="inline-flex items-center gap-2 bg-emerald-900/80 hover:bg-emerald-800/90 active:scale-95 text-emerald-100 border border-emerald-600/50 backdrop-blur-md font-bold px-5 py-3.5 rounded-2xl text-sm sm:text-base transition-all shadow-md hover:scale-[1.02] cursor-pointer"
                 >
                   <MessageCircle className="w-5 h-5 text-emerald-400" />
-                  <span>WhatsApp-এ কথা বলুন</span>
-                </a>
+                  <span>WhatsApp ও হটলাইনে যোগাযোগ</span>
+                  <span className="text-[10px] bg-amber-400 text-emerald-950 font-black px-2 py-0.5 rounded-full">
+                    ২টি হেল্পলাইন
+                  </span>
+                </button>
               </div>
 
               {/* Guarantees Badges */}
@@ -1459,12 +1529,12 @@ ${lines}
                       <a
                         href={
                           isComingSoon
-                            ? `https://wa.me/${tenant.whatsapp}?text=${encodeURIComponent(
+                            ? `https://wa.me/${cleanPhone1}?text=${encodeURIComponent(
                                 `আসসালামু আলাইকুম, আমি "${p.name} (${activeVariant.unit})" আসার পর অগ্রিম বুকিং / কিনতে আগ্রহী। পণ্যটি কবে নাগাদ স্টকে পাওয়া যাবে?`
                               )}`
                             : isOutOfStock
                             ? "#"
-                            : `https://wa.me/${tenant.whatsapp}?text=${encodeURIComponent(
+                            : `https://wa.me/${cleanPhone1}?text=${encodeURIComponent(
                                 `আসসালামু আলাইকুম, আমি "${p.name} (${activeVariant.unit}) x ${cardQty} = ৳${activeVariant.price * cardQty}" অর্ডার করতে চাচ্ছি।`
                               )}`
                         }
@@ -1508,7 +1578,7 @@ ${lines}
                       {/* Large Primary "Order Now" Button / Pre-Order button */}
                       {isComingSoon ? (
                         <a
-                          href={`https://wa.me/${tenant.whatsapp}?text=${encodeURIComponent(
+                          href={`https://wa.me/${cleanPhone1}?text=${encodeURIComponent(
                             `আসসালামু আলাইকুম, আমি "${p.name} (${activeVariant.unit})" আসার পর অগ্রিম বুকিং / প্রি-অর্ডার করতে চাই। পণ্যটি কবে নাগাদ স্টকে আসবে?`
                           )}`}
                           target="_blank"
@@ -1573,7 +1643,7 @@ ${lines}
               description:
                 tenant.tagline ||
                 "খাঁটি প্রাকৃতিক মধু, রাজশাহীর মিষ্টি আম ও খাঁটি খেজুরের গুড়ের বিশ্বস্ত অনলাইন শপ।",
-              telephone: tenant.whatsapp || "+8801700000000",
+              telephone: [cleanPhone1 ? `+${cleanPhone1}` : "+8801778910924", cleanPhone2 ? `+${cleanPhone2}` : "+8801852387701"],
               priceRange: "৳৳",
               currenciesAccepted: "BDT",
               paymentAccepted: "Cash on Delivery, bKash, Nagad",
@@ -2277,6 +2347,9 @@ ${lines}
                   >
                     <MessageCircle className="w-4 h-4 fill-emerald-600 text-emerald-600" />
                     <span>WhatsApp-এ সরাসরি অর্ডার দিন (১ ক্লিকে)</span>
+                    <span className="bg-emerald-200 text-emerald-950 text-[10px] font-black px-1.5 py-0.2 rounded-full">
+                      ২টি নম্বর
+                    </span>
                   </button>
 
                   {/* Trust Assurances */}
@@ -2668,20 +2741,40 @@ ${lines}
                 </div>
               </div>
 
-              {/* WhatsApp Action Box */}
-              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 text-center">
-                <p className="text-xs font-semibold text-emerald-900 mb-2.5 leading-relaxed">
-                  📱 দ্রুত ডেলিভারি নিশ্চিত করতে ও অর্ডারের আপডেট পেতে নিচের বাটনে ট্যাপ করে WhatsApp-এ মেসেজটি পাঠান:
+              {/* WhatsApp Action Box with Dual Numbers */}
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center space-y-2.5">
+                <p className="text-xs font-bold text-emerald-950 leading-relaxed">
+                  📱 দ্রুত ডেলিভারি নিশ্চিত করতে ও অর্ডারের আপডেট পেতে নিচের যেকোনো WhatsApp নম্বরে মেসেজ পাঠান:
                 </p>
-                <a
-                  href={completedOrder.whatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full bg-[#25D366] hover:bg-[#20ba5a] active:scale-95 text-white font-black py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-emerald-900/10 transition text-sm cursor-pointer"
-                >
-                  <MessageCircle className="w-5 h-5 fill-white text-white" />
-                  <span>WhatsApp-এ অর্ডারের কপি পাঠান</span>
-                </a>
+                <div className="flex flex-col gap-2">
+                  <a
+                    href={completedOrder.whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full bg-[#25D366] hover:bg-[#20ba5a] active:scale-95 text-white font-black py-3 px-3.5 rounded-xl flex items-center justify-between shadow-md transition text-xs cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <MessageCircle className="w-4 h-4 fill-white text-white flex-shrink-0" />
+                      <span>WhatsApp ১ (প্রধান লাইন)</span>
+                    </div>
+                    <span className="text-[11px] font-mono opacity-90 group-hover:underline">{displayPhone1} →</span>
+                  </a>
+
+                  {completedOrder.whatsappUrl2 && (
+                    <a
+                      href={completedOrder.whatsappUrl2}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full bg-[#1da851] hover:bg-[#17853f] active:scale-95 text-white font-black py-3 px-3.5 rounded-xl flex items-center justify-between shadow-md transition text-xs cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-2">
+                        <MessageCircle className="w-4 h-4 fill-white text-white flex-shrink-0" />
+                        <span>WhatsApp ২ (বিকল্প লাইন)</span>
+                      </div>
+                      <span className="text-[11px] font-mono opacity-90 group-hover:underline">{displayPhone2} →</span>
+                    </a>
+                  )}
+                </div>
               </div>
 
               <button
@@ -2695,38 +2788,427 @@ ${lines}
         </div>
       )}
 
-      {/* Footer */}
-      <footer className="bg-stone-900 text-stone-400 text-xs py-10 mt-12 border-t border-stone-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-6 text-center sm:text-left">
-          <div className="flex flex-col sm:flex-row items-center gap-3.5">
-            <div className="w-12 h-12 rounded-full overflow-hidden bg-white p-0.5 border-2 border-amber-400/40 shadow-lg flex-shrink-0">
-              <Image
-                src="/logo.png"
-                alt={tenant.name}
-                width={48}
-                height={48}
-                className="w-full h-full object-cover rounded-full"
-              />
-            </div>
-            <div>
-              <p className="font-bold text-stone-100 text-sm flex items-center gap-2 justify-center sm:justify-start">
-                <span>{tenant.name}</span>
-                <span className="text-[10px] text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded-full border border-amber-400/30 font-semibold">
-                  ১০০% খাঁটি নিশ্চয়তা
-                </span>
+      {/* ==================== FLOATING DUAL WHATSAPP & HOTLINE WIDGET ==================== */}
+      <div className="fixed bottom-20 left-3 sm:bottom-6 sm:left-6 z-40 animate-fadeIn">
+        <button
+          type="button"
+          onClick={() => setIsContactModalOpen(true)}
+          className="group relative flex items-center gap-2 bg-gradient-to-r from-emerald-600 via-emerald-700 to-emerald-800 hover:from-emerald-700 hover:to-emerald-900 text-white pl-3.5 pr-4 py-2.5 rounded-full shadow-2xl shadow-emerald-950/40 border border-emerald-400/40 transition-all hover:scale-105 active:scale-95 cursor-pointer ring-4 ring-emerald-500/20"
+          aria-label="WhatsApp ও হেল্পলাইনে যোগাযোগ"
+          title="WhatsApp ও হেল্পলাইন (২টি নম্বর)"
+        >
+          {/* Pulsing online indicator */}
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
+          </span>
+
+          <MessageCircle className="w-4 h-4 text-emerald-200 fill-emerald-200 flex-shrink-0" />
+
+          <div className="flex flex-col text-left leading-none">
+            <span className="text-[11px] font-black tracking-tight text-white flex items-center gap-1">
+              WhatsApp হেল্পলাইন
+              <span className="bg-amber-400 text-emerald-950 text-[9px] font-black px-1.5 py-0.2 rounded-full">
+                ২টি
+              </span>
+            </span>
+            <span className="text-[9px] text-emerald-200 font-medium">সরাসরি কথা বলুন</span>
+          </div>
+        </button>
+      </div>
+
+      {/* ==================== QUICK CONTACT & HOTLINE MODAL ==================== */}
+      {isContactModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-stone-200 overflow-hidden animate-scaleUp">
+            {/* Header */}
+            <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-[#043625] text-white p-5 sm:p-6 relative">
+              <button
+                type="button"
+                onClick={() => setIsContactModalOpen(false)}
+                className="absolute top-4 right-4 text-emerald-300 hover:text-white p-1 rounded-full hover:bg-white/10 transition cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="inline-flex items-center gap-1.5 bg-amber-400 text-emerald-950 text-[10px] sm:text-xs font-black px-3 py-1 rounded-full mb-2 shadow-sm">
+                <Sparkles className="w-3 h-3 text-emerald-950" />
+                <span>সার্বক্ষণিক কাস্টমার কেয়ার</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black text-white">
+                সরাসরি যোগাযোগ ও WhatsApp
+              </h3>
+              <p className="text-xs text-emerald-200 mt-1 leading-relaxed">
+                পণ্য অর্ডার, পরামর্শ বা ডেলিভারি সংক্রান্ত যেকোনো তথ্যের জন্য আমাদের সাথে সরাসরি কল বা WhatsApp-এ যোগাযোগ করুন।
               </p>
-              <p className="mt-0.5 text-stone-400">গ্রাম-বাংলার প্রাকৃতিক মৌচাকের মধু, মিষ্টি আম ও খাঁটি গুড়ের বিশ্বস্ত প্রতিষ্ঠান।</p>
+            </div>
+
+            {/* Content: Dual Numbers */}
+            <div className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              {/* Option 1: Primary Hotline */}
+              <div className="bg-emerald-50/80 border-2 border-emerald-300/80 rounded-2xl p-4 transition hover:border-emerald-500 shadow-xs">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                      <Phone className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-sm text-emerald-950">
+                        হটলাইন ১ (প্রধান সেলস ও অর্ডার)
+                      </h4>
+                      <p className="text-[11px] text-emerald-700 font-medium">নতুন অর্ডার ও সাধারণ তথ্য</p>
+                    </div>
+                  </div>
+                  <span className="bg-emerald-200/90 text-emerald-950 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-300">
+                    প্রধান লাইন
+                  </span>
+                </div>
+
+                <div className="bg-white rounded-xl p-2.5 border border-emerald-200/80 flex items-center justify-between mb-3">
+                  <span className="text-xs text-stone-600 font-semibold">মোবাইল নম্বর:</span>
+                  <span className="font-mono font-black text-base text-emerald-950 tracking-wide">
+                    {displayPhone1}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <a
+                    href={`https://wa.me/${cleanPhone1}?text=${encodeURIComponent(
+                      `আসসালামু আলাইকুম ${tenant.name}, আমি পণ্য অর্ডার ও বিস্তারিত তথ্য জানার জন্য যোগাযোগ করছি।`
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="bg-[#25D366] hover:bg-[#20ba5a] active:scale-95 text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 text-xs shadow-sm transition"
+                  >
+                    <MessageCircle className="w-4 h-4 fill-white text-white" />
+                    <span>WhatsApp চ্যাট</span>
+                  </a>
+                  <a
+                    href={`tel:${rawPhone1.replace(/\D/g, "")}`}
+                    className="bg-emerald-800 hover:bg-emerald-900 active:scale-95 text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 text-xs shadow-sm transition"
+                  >
+                    <Phone className="w-3.5 h-3.5" />
+                    <span>সরাসরি কল দিন</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Option 2: Secondary Hotline */}
+              <div className="bg-amber-50/70 border-2 border-amber-300/80 rounded-2xl p-4 transition hover:border-amber-500 shadow-xs">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-xs">
+                      <Headphones className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-sm text-stone-900">
+                        হটলাইন ২ (কাস্টমার সাপোর্ট ও ডেলিভারি)
+                      </h4>
+                      <p className="text-[11px] text-stone-600 font-medium">জরুরি সহায়তা ও পার্সেল ট্র্যাকিং</p>
+                    </div>
+                  </div>
+                  <span className="bg-amber-200/90 text-amber-950 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-300">
+                    বিকল্প লাইন
+                  </span>
+                </div>
+
+                <div className="bg-white rounded-xl p-2.5 border border-amber-200/80 flex items-center justify-between mb-3">
+                  <span className="text-xs text-stone-600 font-semibold">মোবাইল নম্বর:</span>
+                  <span className="font-mono font-black text-base text-stone-900 tracking-wide">
+                    {displayPhone2}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <a
+                    href={`https://wa.me/${cleanPhone2}?text=${encodeURIComponent(
+                      `আসসালামু আলাইকুম ${tenant.name}, আমি জরুরি ডেলিভারি ও কাস্টমার কেয়ার সংক্রান্ত তথ্যের জন্য যোগাযোগ করছি।`
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="bg-[#25D366] hover:bg-[#20ba5a] active:scale-95 text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 text-xs shadow-sm transition"
+                  >
+                    <MessageCircle className="w-4 h-4 fill-white text-white" />
+                    <span>WhatsApp চ্যাট</span>
+                  </a>
+                  <a
+                    href={`tel:${rawPhone2.replace(/\D/g, "")}`}
+                    className="bg-stone-800 hover:bg-stone-900 active:scale-95 text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 text-xs shadow-sm transition"
+                  >
+                    <Phone className="w-3.5 h-3.5" />
+                    <span>সরাসরি কল দিন</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Service Assurance */}
+              <div className="bg-stone-50 border border-stone-200 rounded-2xl p-3 text-xs text-stone-600 space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-emerald-900">
+                  <Clock className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>সাপোর্ট সময়সূচী: প্রতিদিন সকাল ৮:০০টা — রাত ১১:০০টা</span>
+                </div>
+                <p className="text-[11px] text-stone-500 pl-5">
+                  একটি লাইনে ব্যস্ত থাকলে অনুগ্রহ করে অন্য লাইনে কল বা WhatsApp-এ মেসেজ দিন।
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsContactModalOpen(false)}
+                className="w-full bg-stone-100 hover:bg-stone-200 active:scale-95 text-stone-700 font-bold py-2.5 rounded-xl transition text-xs cursor-pointer"
+              >
+                বন্ধ করুন
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-4 text-stone-500 text-xs">
-            <span>© {new Date().getFullYear()} {tenant.name}। সর্বস্বত্ব সংরক্ষিত।</span>
-            <span>•</span>
-            <a
-              href={`/${tenant.slug}/admin`}
-              className="text-stone-400 hover:text-amber-400 transition flex items-center gap-1 font-medium"
-            >
-              🔒 অ্যাডমিন প্রবেশ
-            </a>
+        </div>
+      )}
+
+      {/* ==================== 1-CLICK WHATSAPP ORDER CHOOSER MODAL ==================== */}
+      {isWaOrderModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-stone-200 overflow-hidden animate-scaleUp">
+            {/* Header */}
+            <div className="bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950 text-white p-5 sm:p-6 text-center relative">
+              <button
+                type="button"
+                onClick={() => setIsWaOrderModalOpen(false)}
+                className="absolute top-4 right-4 text-emerald-300 hover:text-white p-1 rounded-full hover:bg-white/10 transition cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="w-12 h-12 bg-emerald-500/20 border border-emerald-400/40 rounded-full flex items-center justify-center mx-auto mb-2 text-emerald-300 shadow-inner">
+                <MessageCircle className="w-6 h-6 fill-white text-white" />
+              </div>
+              <h3 className="text-xl font-black text-white">WhatsApp অর্ডার নম্বর নির্বাচন</h3>
+              <p className="text-xs text-emerald-200 mt-1">
+                কোন নম্বরে সরাসরি আপনার অর্ডারের তালিকা পাঠাতে চান?
+              </p>
+              <div className="inline-block mt-3 bg-amber-400 text-emerald-950 font-black text-xs px-3 py-1 rounded-full shadow-md">
+                কার্টে {totalCartCount}টি পণ্য • সর্বমোট ৳{grandTotal}
+              </div>
+            </div>
+
+            {/* Selection Options */}
+            <div className="p-5 space-y-3">
+              <button
+                type="button"
+                onClick={() => executeWhatsAppOrder(rawPhone1)}
+                className="w-full text-left bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-300 hover:border-emerald-500 active:scale-98 rounded-2xl p-3.5 transition group cursor-pointer"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-[#25D366] text-white flex items-center justify-center shadow-xs flex-shrink-0">
+                      <MessageCircle className="w-5 h-5 fill-white text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-black text-sm text-emerald-950 flex items-center gap-1.5">
+                        <span>হটলাইন ১ (প্রধান)</span>
+                        <span className="text-[10px] bg-emerald-200 text-emerald-900 font-bold px-1.5 py-0.2 rounded-full">সেলস</span>
+                      </h4>
+                      <p className="font-mono text-xs font-bold text-emerald-800">{displayPhone1}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-emerald-700 group-hover:translate-x-1 transition-transform">
+                    পাঠান →
+                  </span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => executeWhatsAppOrder(rawPhone2)}
+                className="w-full text-left bg-amber-50/70 hover:bg-amber-100/80 border-2 border-amber-300 hover:border-amber-500 active:scale-98 rounded-2xl p-3.5 transition group cursor-pointer"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-[#1da851] text-white flex items-center justify-center shadow-xs flex-shrink-0">
+                      <MessageCircle className="w-5 h-5 fill-white text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-black text-sm text-stone-900 flex items-center gap-1.5">
+                        <span>হটলাইন ২ (বিকল্প)</span>
+                        <span className="text-[10px] bg-amber-200 text-amber-900 font-bold px-1.5 py-0.2 rounded-full">সাপোর্ট</span>
+                      </h4>
+                      <p className="font-mono text-xs font-bold text-stone-700">{displayPhone2}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-stone-700 group-hover:translate-x-1 transition-transform">
+                    পাঠান →
+                  </span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsWaOrderModalOpen(false)}
+                className="w-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold py-2 rounded-xl transition text-xs cursor-pointer mt-2"
+              >
+                বাতিল করুন
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== RICH FOOTER WITH DUAL HOTLINES ==================== */}
+      <footer className="bg-stone-950 text-stone-400 text-xs mt-16 border-t border-stone-800/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-10 border-b border-stone-800/70">
+            {/* Column 1: Brand Info */}
+            <div className="space-y-3.5">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full overflow-hidden bg-white p-0.5 border-2 border-amber-400 shadow-md flex-shrink-0">
+                  <Image
+                    src="/logo.png"
+                    alt={tenant.name}
+                    width={48}
+                    height={48}
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-white tracking-tight flex items-center gap-2">
+                    <span>{tenant.name}</span>
+                    <span className="text-[10px] text-amber-400 bg-amber-950 px-2 py-0.5 rounded-full border border-amber-400/40 font-bold">
+                      ১০০% খাঁটি
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-emerald-400 font-medium">প্রাকৃতিক ও নির্ভেজাল খাদ্যোপাদান</p>
+                </div>
+              </div>
+              <p className="text-stone-400 text-xs leading-relaxed">
+                গ্রাম-বাংলার প্রাকৃতিক মৌচাকের কাঁচা মধু, রাজশাহীর মিষ্টি সুস্বাদু আম ও আসল খেজুরের গুড়ের নির্ভরযোগ্য প্রতিষ্ঠান। কোনো ক্ষতিকর কেমিক্যাল ছাড়া নির্ভেজাল স্বাদের নিশ্চয়তা।
+              </p>
+              <div className="flex items-center gap-2 text-[11px] text-stone-400">
+                <MapPin className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                <span>নাটোর ও রাজশাহী, বাংলাদেশ</span>
+              </div>
+            </div>
+
+            {/* Column 2: Dual Hotlines & WhatsApp */}
+            <div className="space-y-3">
+              <h4 className="font-extrabold text-sm text-stone-100 flex items-center gap-2">
+                <Phone className="w-4 h-4 text-amber-400" />
+                <span>সার্বক্ষণিক হেল্পলাইন ও WhatsApp</span>
+              </h4>
+              <p className="text-[11px] text-stone-400">
+                যেকোনো প্রয়োজনে সরাসরি কল দিন অথবা WhatsApp-এ মেসেজ পাঠান:
+              </p>
+
+              <div className="space-y-2">
+                {/* Helpline 1 */}
+                <div className="bg-stone-900/90 border border-stone-800 rounded-xl p-2.5 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="text-[10px] text-emerald-400 font-bold block">হটলাইন ১ (প্রধান সেলস)</span>
+                    <a
+                      href={`tel:${rawPhone1.replace(/\D/g, "")}`}
+                      className="font-mono font-bold text-sm text-white hover:text-amber-400 transition"
+                    >
+                      {displayPhone1}
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <a
+                      href={`https://wa.me/${cleanPhone1}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="bg-[#25D366] hover:bg-[#20ba5a] text-white p-2 rounded-lg transition"
+                      title="WhatsApp ১-এ চ্যাট করুন"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5 fill-white text-white" />
+                    </a>
+                    <a
+                      href={`tel:${rawPhone1.replace(/\D/g, "")}`}
+                      className="bg-emerald-900 hover:bg-emerald-800 text-white p-2 rounded-lg transition"
+                      title="হটলাইন ১-এ কল করুন"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                </div>
+
+                {/* Helpline 2 */}
+                <div className="bg-stone-900/90 border border-stone-800 rounded-xl p-2.5 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="text-[10px] text-amber-400 font-bold block">হটলাইন ২ (সাপোর্ট ও ডেলিভারি)</span>
+                    <a
+                      href={`tel:${rawPhone2.replace(/\D/g, "")}`}
+                      className="font-mono font-bold text-sm text-white hover:text-amber-400 transition"
+                    >
+                      {displayPhone2}
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <a
+                      href={`https://wa.me/${cleanPhone2}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="bg-[#25D366] hover:bg-[#20ba5a] text-white p-2 rounded-lg transition"
+                      title="WhatsApp ২-এ চ্যাট করুন"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5 fill-white text-white" />
+                    </a>
+                    <a
+                      href={`tel:${rawPhone2.replace(/\D/g, "")}`}
+                      className="bg-emerald-900 hover:bg-emerald-800 text-white p-2 rounded-lg transition"
+                      title="হটলাইন ২-এ কল করুন"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-stone-500 flex items-center gap-1">
+                <Clock className="w-3 h-3 text-stone-400" />
+                <span>সাপোর্ট সময়: প্রতিদিন সকাল ৮:০০টা — রাত ১১:০০টা</span>
+              </p>
+            </div>
+
+            {/* Column 3: Trust, Delivery & Guarantees */}
+            <div className="space-y-3">
+              <h4 className="font-extrabold text-sm text-stone-100 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span>আমাদের সেবাসমূহ ও অঙ্গীকার</span>
+              </h4>
+              <ul className="space-y-2 text-stone-400 text-xs">
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-400">✓</span>
+                  <span><strong>ক্যাশ অন ডেলিভারি:</strong> পণ্য হাতে পেয়ে দেখে মূল্য পরিশোধের সুবিধা।</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-400">✓</span>
+                  <span><strong>দ্রুত কুরিয়ার:</strong> নাটোর থেকে সরাসরি স্টেডফাস্ট, সুন্দরবন ও পাঠাও-এ হোম ডেলিভারি।</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-400">✓</span>
+                  <span><strong>শতভাগ নির্ভেজাল:</strong> সম্পূর্ণ প্রাকৃতিক প্রক্রিয়ায় তৈরি, কোনো কৃত্রিম প্রিজারভেটিভ নেই।</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom Copyright & Admin */}
+          <div className="pt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-stone-500 text-xs text-center sm:text-left">
+            <p>© {new Date().getFullYear()} {tenant.name}। সর্বস্বত্ব সংরক্ষিত।</p>
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => setIsContactModalOpen(true)}
+                className="hover:text-amber-400 transition cursor-pointer"
+              >
+                যোগাযোগ তথ্য
+              </button>
+              <span>•</span>
+              <a
+                href={`/${tenant.slug}/admin`}
+                className="text-stone-400 hover:text-amber-400 transition flex items-center gap-1 font-medium"
+              >
+                🔒 অ্যাডমিন প্যানেল
+              </a>
+            </div>
           </div>
         </div>
       </footer>

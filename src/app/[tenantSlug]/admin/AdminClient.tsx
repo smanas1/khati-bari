@@ -104,6 +104,7 @@ interface TenantData {
   name: string;
   tagline: string | null;
   whatsapp: string;
+  whatsapp2?: string | null;
   fbPageUrl: string | null;
   deliveryLocal: number;
   deliveryDhaka: number;
@@ -915,14 +916,37 @@ export default function AdminClient({ tenant }: { tenant: TenantData }) {
                       className="w-full border border-stone-200 rounded-xl px-3.5 py-2 bg-stone-50 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
                     />
                   </div>
-                  <div>
-                    <label className="text-xs font-bold text-stone-600 mb-1 block">WhatsApp নাম্বার</label>
-                    <input
-                      name="whatsapp"
-                      defaultValue={tenant.whatsapp}
-                      placeholder="8801700000000"
-                      className="w-full border border-stone-200 rounded-xl px-3.5 py-2 bg-stone-50 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-stone-700 mb-1 flex items-center justify-between">
+                        <span>WhatsApp / হটলাইন ১ (প্রধান)</span>
+                        <span className="text-[10px] text-emerald-800 font-semibold bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+                          প্রধান
+                        </span>
+                      </label>
+                      <input
+                        name="whatsapp"
+                        defaultValue={tenant.whatsapp}
+                        placeholder="যেমন: 01778910924"
+                        className="w-full border border-stone-200 rounded-xl px-3.5 py-2.5 bg-stone-50 focus:ring-2 focus:ring-emerald-600 focus:bg-white text-sm font-medium transition"
+                      />
+                      <p className="text-[11px] text-stone-500 mt-1">কল ও WhatsApp এর মূল নম্বর</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-stone-700 mb-1 flex items-center justify-between">
+                        <span>WhatsApp / হটলাইন ২ (বিকল্প/সাপোর্ট)</span>
+                        <span className="text-[10px] text-amber-800 font-semibold bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
+                          বিকল্প
+                        </span>
+                      </label>
+                      <input
+                        name="whatsapp2"
+                        defaultValue={tenant.whatsapp2 || "01852387701"}
+                        placeholder="যেমন: 01852387701"
+                        className="w-full border border-stone-200 rounded-xl px-3.5 py-2.5 bg-stone-50 focus:ring-2 focus:ring-emerald-600 focus:bg-white text-sm font-medium transition"
+                      />
+                      <p className="text-[11px] text-stone-500 mt-1">জরুরি কল ও বিকল্প WhatsApp সাপোর্ট</p>
+                    </div>
                   </div>
                   <div>
                     <label className="text-xs font-bold text-stone-600 mb-1 block">ডেলিভারি চার্জ (৳)</label>

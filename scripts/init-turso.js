@@ -18,6 +18,7 @@ async function run() {
       "name" TEXT NOT NULL,
       "tagline" TEXT,
       "whatsapp" TEXT NOT NULL,
+      "whatsapp2" TEXT,
       "fbPageUrl" TEXT,
       "deliveryLocal" INTEGER NOT NULL DEFAULT 60,
       "deliveryDhaka" INTEGER NOT NULL DEFAULT 100,

@@ -15,6 +15,7 @@ model Tenant {
   name            String
   tagline         String?
   whatsapp        String // যেমন: "8801700000000"
+  whatsapp2       String? // দ্বিতীয় WhatsApp / হেল্পলাইন নম্বর (যেমন: "01852387701")
   fbPageUrl       String?
   deliveryLocal   Int       @default(60) // রাজশাহী সিটি
   deliveryDhaka   Int       @default(120) // ঢাকা সিটি

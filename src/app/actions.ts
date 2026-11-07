@@ -44,7 +44,8 @@ export async function getOrInitTenant(rawSlug: string = "khatibari") {
         slug,
         name: (slug === "khatibari" || slug === "khati-bari" || slug === "khati-shombhar") ? "খাঁটি বাড়ি" : slug.toUpperCase(),
         tagline: "প্রাকৃতিক ও নির্ভেজাল খাদ্যের বিশ্বস্ত প্রতিষ্ঠান",
-        whatsapp: "8801700000000",
+        whatsapp: "01778910924",
+        whatsapp2: "01852387701",
         enabledCouriers: "steadfast,pathao,sundarban,sa_paribahan",
         products: {
           create: [
@@ -301,6 +302,7 @@ export async function updateTenantSettingsAction(tenantId: string, slug: string,
     name: String(formData.get("name")),
     tagline: String(formData.get("tagline") || ""),
     whatsapp: String(formData.get("whatsapp")),
+    whatsapp2: String(formData.get("whatsapp2") || ""),
     deliveryLocal: Number(formData.get("deliveryLocal")),
     deliveryDhaka: Number(formData.get("deliveryDhaka")),
     deliveryOutside: Number(formData.get("deliveryOutside")),
